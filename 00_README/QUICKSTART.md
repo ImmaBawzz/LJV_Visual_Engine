@@ -8,6 +8,12 @@ Defaults assume `ffmpeg` and `ffprobe` are available on your system `PATH`.
 If they are not, replace those values with absolute executable paths in `01_CONFIG/paths_config.json`.
 
 ## 2. Drop inputs
+Optional bootstrap for required text files:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\05_SCRIPTS\tools\01_bootstrap_text_inputs.ps1
+```
+
 Place:
 - `song.wav` in `02_INPUT/audio/`
 - `clip.mp4` in `02_INPUT/video/`

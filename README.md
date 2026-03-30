@@ -42,9 +42,15 @@ Generates alignment diagnostics, quality scorecards, and delivery manifests for 
 ### Setup
 
 1. Clone this repository
-2. Place your media files in the scaffolded `02_INPUT/` subdirectories
-3. Review configuration in `01_CONFIG/`
-4. Run the pipeline:
+2. Optionally prefill required text inputs:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\05_SCRIPTS\tools\01_bootstrap_text_inputs.ps1
+```
+
+3. Place your media files in the scaffolded `02_INPUT/` subdirectories
+4. Review configuration in `01_CONFIG/`
+5. Run the pipeline:
 
 If `ffmpeg` or `ffprobe` are not on your system `PATH`, set absolute paths for them in `01_CONFIG/paths_config.json` before running.
 

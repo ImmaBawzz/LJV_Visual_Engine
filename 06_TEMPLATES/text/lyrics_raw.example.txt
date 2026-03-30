@@ -1,0 +1,3 @@
+First lyric line
+Second lyric line
+Third lyric line
