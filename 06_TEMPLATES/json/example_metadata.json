@@ -1,0 +1,21 @@
+{
+  "genre": "Zaag Krach",
+  "subgenre": [
+    "Slow Uptempo Zaag Krach"
+  ],
+  "tempo_bpm": 148,
+  "tempo_category": "midtempo",
+  "time_signature": "4/4",
+  "key": "Am",
+  "scale_mode": "minor",
+  "mood_tags": [
+    "menacing",
+    "euphoric",
+    "emotional"
+  ],
+  "production_techniques": [
+    "sidechain",
+    "bitcrushing",
+    "resampling"
+  ]
+}

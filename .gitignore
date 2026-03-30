@@ -1,0 +1,49 @@
+# Media files (personal content)
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.wav
+*.mp3
+*.aac
+*.flac
+
+# Subtitle files (working/generated)
+*.ass
+*.srt
+*.vtt
+
+# Working directories (local outputs and checkpoints)
+02_INPUT/
+03_WORK/
+04_OUTPUT/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv*
+venv/
+
+# IDE
+.vscode/settings.json
+.vscode/extensions.json
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+~*
