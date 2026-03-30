@@ -31,6 +31,16 @@ Each stage (preparation, loop building, alignment, rendering, release) is indepe
 📊 **Production Reports**  
 Generates alignment diagnostics, quality scorecards, and delivery manifests for transparency and compliance.
 
+## Preview
+
+For a public demo GIF, export a short muted clip from a non-private render with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\05_SCRIPTS\tools\02_export_readme_preview_gif.ps1 -SourceVideo ".\04_OUTPUT\youtube_16x9\master_lyrics.mp4"
+```
+
+The script writes the preview to `.github/assets/readme-preview.gif`, ready to be committed once you are happy the clip is safe for public release.
+
 ## Quick Start
 
 ### Requirements
