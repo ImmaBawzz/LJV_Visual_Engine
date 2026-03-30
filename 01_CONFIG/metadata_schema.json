@@ -1,0 +1,30 @@
+{
+  "fields": [
+    "genre",
+    "subgenre",
+    "tempo_bpm",
+    "tempo_category",
+    "time_signature",
+    "key",
+    "scale_mode",
+    "rhythmic_density",
+    "kick_profile",
+    "snare_character",
+    "hihat_pattern",
+    "synth_lead_type",
+    "distortion_amount",
+    "filter_usage",
+    "transient_shaping",
+    "dynamics_range_db",
+    "loudness_lufs",
+    "arrangement_density",
+    "melodic_content",
+    "harmonic_complexity",
+    "production_techniques",
+    "sound_design_markers",
+    "energy_level",
+    "mood_tags",
+    "structure_markers",
+    "annotation_confidence"
+  ]
+}

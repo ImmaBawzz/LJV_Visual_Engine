@@ -1,0 +1,16 @@
+{
+  "subtle_emotional": {
+    "zoom_breath": 0.00015,
+    "brightness_pulse": 0.03,
+    "vignette_pulse": 0.015,
+    "hook_lift": 0.08,
+    "climax_lift": 0.12
+  },
+  "aggressive_festival": {
+    "zoom_breath": 0.0003,
+    "brightness_pulse": 0.07,
+    "vignette_pulse": 0.025,
+    "hook_lift": 0.12,
+    "climax_lift": 0.18
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "ffmpeg": "C:/ffmpeg/bin/ffmpeg.exe",
+  "ffprobe": "C:/ffmpeg/bin/ffprobe.exe",
+  "python": "python",
+  "font_primary": "C:/Windows/Fonts/arial.ttf"
+}

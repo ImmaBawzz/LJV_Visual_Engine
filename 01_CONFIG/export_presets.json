@@ -1,0 +1,39 @@
+{
+  "youtube_16x9": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "crf": 18,
+    "subtitle_margin_v": 42
+  },
+  "vertical_9x16": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 20,
+    "subtitle_margin_v": 120
+  },
+  "square_1x1": {
+    "width": 1080,
+    "height": 1080,
+    "fps": 30,
+    "crf": 20,
+    "subtitle_margin_v": 70
+  },
+  "enhancement_presets": {
+    "detail_only_720p": {
+      "scale_filter": null,
+      "filters": [
+        "hqdn3d=1.2:1.2:5:5",
+        "unsharp=5:5:0.8:3:3:0.0"
+      ]
+    },
+    "detail_upscale_1080p": {
+      "scale_filter": "scale=1920:1080:flags=lanczos",
+      "filters": [
+        "hqdn3d=1.0:1.0:4:4",
+        "unsharp=5:5:1.0:3:3:0.0"
+      ]
+    }
+  }
+}

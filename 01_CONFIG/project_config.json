@@ -1,0 +1,40 @@
+{
+  "artist": "LJV",
+  "title": "Velocity Letters",
+  "album_or_series": "Visual Engine Release",
+  "song_duration_sec": 258,
+  "bpm": 148,
+  "key": "A minor",
+  "mood": [
+    "emotional",
+    "cinematic",
+    "euphoric",
+    "moonlit"
+  ],
+  "visual_theme": "angelic floating sky, moonlit clouds, subtle drift, luminous wings",
+  "primary_format": "youtube_16x9",
+  "section_plan": {
+    "title_intro_sec": 4,
+    "intro_sec": 12,
+    "body_a_sec": 72,
+    "hook_a_sec": 24,
+    "body_b_sec": 60,
+    "climax_sec": 48,
+    "outro_sec": 18,
+    "title_outro_sec": 20
+  },
+  "lyric_style_default": "spotify_clean",
+  "lyric_style_hook": "hook_highlight",
+  "reactive_preset": "subtle_emotional",
+  "enhancement": {
+    "enabled": true,
+    "preset": "detail_only_720p"
+  },
+  "export_targets": [
+    "youtube_16x9",
+    "vertical_9x16",
+    "square_1x1",
+    "teasers"
+  ],
+  "release_bundle_name": "LJV_Velocity_Letters_RELEASE"
+}
