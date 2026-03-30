@@ -13,10 +13,16 @@
 *.srt
 *.vtt
 
-# Working directories (local outputs and checkpoints)
-02_INPUT/
-03_WORK/
-04_OUTPUT/
+# Tracked scaffolds; ignore user content inside them
+02_INPUT/**
+!02_INPUT/**/
+!02_INPUT/**/.gitkeep
+03_WORK/**
+!03_WORK/**/
+!03_WORK/**/.gitkeep
+04_OUTPUT/**
+!04_OUTPUT/**/
+!04_OUTPUT/**/.gitkeep
 
 # Python
 __pycache__/

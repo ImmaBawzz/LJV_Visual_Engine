@@ -4,6 +4,9 @@
 Edit:
 - `01_CONFIG/paths_config.json`
 
+Defaults assume `ffmpeg` and `ffprobe` are available on your system `PATH`.
+If they are not, replace those values with absolute executable paths in `01_CONFIG/paths_config.json`.
+
 ## 2. Drop inputs
 Place:
 - `song.wav` in `02_INPUT/audio/`
@@ -44,6 +47,8 @@ After (or during) a run, check:
 - `03_WORK/reports/release_readiness_report.json`
 
 The pipeline now fails fast when preflight validation or quality gate checks fail.
+
+The repo keeps `02_INPUT/`, `03_WORK/`, and `04_OUTPUT/` as empty tracked scaffolds. Your actual media, reports, and renders stay ignored by git.
 
 ## 6. Final outputs
 Check:

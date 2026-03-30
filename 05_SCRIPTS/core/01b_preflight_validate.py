@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -96,12 +97,17 @@ def main() -> int:
     else:
         add_check("song_duration_sec", "FAIL", "project_config.song_duration_sec must be > 0")
 
-    for key in ["ffmpeg", "ffprobe", "font_primary"]:
+    for key in ["ffmpeg", "ffprobe"]:
         value = paths_cfg.get(key)
-        if value and Path(value).exists():
-            add_check("paths_config", "PASS", f"{key} path exists")
+        if value and (Path(value).exists() or shutil.which(value)):
+            add_check("paths_config", "PASS", f"{key} is configured and resolvable")
         else:
-            add_check("paths_config", "FAIL", f"{key} is missing or does not exist")
+            add_check("paths_config", "FAIL", f"{key} is missing or not resolvable")
+
+    if paths_cfg.get("font_primary"):
+        add_check("paths_config", "PASS", "font_primary is configured")
+    else:
+        add_check("paths_config", "FAIL", "font_primary is missing")
 
     required_texts = {
         "artist_name": ROOT / "02_INPUT" / "branding" / "artist_name.txt",

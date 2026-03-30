@@ -32,7 +32,14 @@ def configure_ffmpeg_path():
     if not ffmpeg_path:
         return
 
-    ffmpeg_dir = str(Path(ffmpeg_path).resolve().parent)
+    if Path(ffmpeg_path).name == ffmpeg_path and not any(sep in ffmpeg_path for sep in ("/", "\\")):
+        return
+
+    ffmpeg_candidate = Path(ffmpeg_path)
+    if not ffmpeg_candidate.exists():
+        return
+
+    ffmpeg_dir = str(ffmpeg_candidate.resolve().parent)
     existing_path = os.environ.get("PATH", "")
     path_entries = existing_path.split(os.pathsep) if existing_path else []
     if ffmpeg_dir not in path_entries:

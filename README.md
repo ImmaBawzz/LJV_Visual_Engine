@@ -35,27 +35,24 @@ Generates alignment diagnostics, quality scorecards, and delivery manifests for 
 
 ### Requirements
 
-- **Windows 10+** (PowerShell 7.6+) or **Linux/macOS** (bash)
+- **Windows 10+** with PowerShell
 - **FFmpeg** (4.4+) and **Python 3.10+**
 - **Input files**: audio (`.wav`), video (`.mp4`), lyrics (`.txt`)
 
 ### Setup
 
 1. Clone this repository
-2. Place your media files in the appropriate `02_INPUT/` subdirectories
+2. Place your media files in the scaffolded `02_INPUT/` subdirectories
 3. Review configuration in `01_CONFIG/`
 4. Run the pipeline:
 
-```bash
-# Windows
-cd 05_SCRIPTS
-.\run_release_pipeline_resumable.ps1
+If `ffmpeg` or `ffprobe` are not on your system `PATH`, set absolute paths for them in `01_CONFIG/paths_config.json` before running.
 
-# Linux/macOS
-bash 05_SCRIPTS/run_release_pipeline_resumable.sh
+```powershell
+.\run_release_pipeline.bat
 ```
 
-For detailed setup instructions, see [SETUP.md](./09_DOCS/SETUP.md) or [QUICKSTART.md](./00_README/QUICKSTART.md).
+For detailed usage and recovery steps, see [QUICKSTART.md](./00_README/QUICKSTART.md) and [CHECKPOINT_GUIDE.md](./09_DOCS/CHECKPOINT_GUIDE.md).
 
 ## Documentation
 
@@ -108,7 +105,7 @@ Social media and promotional exports:
 See `01_CONFIG/` for customizable presets:
 
 - `project_config.json` — Project metadata and output paths
-- `paths_config.json` — Input/output directory mappings
+- `paths_config.json` — Runtime tool paths and font defaults
 - `lyric_style_presets.json` — ASS subtitle styling
 - `reactive_presets.json` — Audio analysis parameters
 - `export_presets.json` — Encoding and delivery formats
