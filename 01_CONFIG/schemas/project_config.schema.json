@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LJV Project Config",
+  "type": "object",
+  "required": [
+    "artist",
+    "title",
+    "song_duration_sec",
+    "section_plan",
+    "lyric_style_default",
+    "reactive_preset",
+    "export_targets"
+  ],
+  "properties": {
+    "artist": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "album_or_series": {
+      "type": "string"
+    },
+    "song_duration_sec": {
+      "type": "number",
+      "minimum": 1
+    },
+    "bpm": {
+      "type": "number",
+      "minimum": 1
+    },
+    "key": {
+      "type": "string"
+    },
+    "mood": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "visual_theme": {
+      "type": "string"
+    },
+    "primary_format": {
+      "type": "string",
+      "enum": [
+        "youtube_16x9",
+        "vertical_9x16",
+        "square_1x1",
+        "teasers"
+      ]
+    },
+    "section_plan": {
+      "type": "object",
+      "required": [
+        "intro_sec",
+        "body_a_sec",
+        "hook_a_sec",
+        "body_b_sec",
+        "climax_sec",
+        "outro_sec"
+      ],
+      "properties": {
+        "title_intro_sec": { "type": "number", "minimum": 0 },
+        "intro_sec": { "type": "number", "minimum": 0 },
+        "body_a_sec": { "type": "number", "minimum": 0 },
+        "hook_a_sec": { "type": "number", "minimum": 0 },
+        "body_b_sec": { "type": "number", "minimum": 0 },
+        "climax_sec": { "type": "number", "minimum": 0 },
+        "outro_sec": { "type": "number", "minimum": 0 },
+        "title_outro_sec": { "type": "number", "minimum": 0 }
+      }
+    },
+    "lyric_style_default": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lyric_style_hook": {
+      "type": "string"
+    },
+    "reactive_preset": {
+      "type": "string",
+      "minLength": 1
+    },
+    "enhancement": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "preset": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "export_targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "youtube_16x9",
+          "vertical_9x16",
+          "square_1x1",
+          "teasers"
+        ]
+      }
+    },
+    "release_bundle_name": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

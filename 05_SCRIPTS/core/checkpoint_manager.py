@@ -8,12 +8,34 @@ Stores state in JSON for cross-script access.
 import json
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECKPOINT_FILE = ROOT / "03_WORK" / "pipeline_checkpoint.json"
 STRUCTURED_LOG = ROOT / "03_WORK" / "logs" / "pipeline_execution.json"
+
+
+class ValidationError(Exception):
+    """Raised when a pipeline step output fails validation."""
+
+
+def _utc_now_iso() -> str:
+    """Return a timezone-aware UTC ISO timestamp string."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _parse_iso_or_now(value: Optional[str]) -> datetime:
+    """Parse an ISO datetime string, defaulting to UTC now when invalid or missing."""
+    if not value:
+        return datetime.now(timezone.utc)
+    try:
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed
+    except Exception:
+        return datetime.now(timezone.utc)
 
 
 def _ensure_dirs():
@@ -50,15 +72,15 @@ class PipelineCheckpoint:
         """Create new empty checkpoint state."""
         return {
             "pipeline_version": "1.0",
-            "created_at": datetime.utcnow().isoformat(),
-            "last_updated": datetime.utcnow().isoformat(),
+            "created_at": _utc_now_iso(),
+            "last_updated": _utc_now_iso(),
             "overall_status": "in_progress",
             "steps": {}
         }
 
     def save(self) -> None:
         """Persist checkpoint state to disk."""
-        self.state["last_updated"] = datetime.utcnow().isoformat()
+        self.state["last_updated"] = _utc_now_iso()
         # Convert integer keys to strings for JSON serialization
         save_data = self.state.copy()
         if "steps" in save_data:
@@ -79,7 +101,7 @@ class PipelineCheckpoint:
             }
 
         self.state["steps"][step_id]["status"] = "running"
-        self.state["steps"][step_id]["start_time"] = datetime.utcnow().isoformat()
+        self.state["steps"][step_id]["start_time"] = _utc_now_iso()
         self.state["overall_status"] = "in_progress"
         self.save()
         self._structured_log("INFO", step_name, f"Step {step_id} started", None)
@@ -90,8 +112,8 @@ class PipelineCheckpoint:
             self.state["steps"][step_id] = {"name": step_name}
 
         step = self.state["steps"][step_id]
-        start = datetime.fromisoformat(step.get("start_time", datetime.utcnow().isoformat()))
-        end = datetime.utcnow()
+        start = _parse_iso_or_now(step.get("start_time"))
+        end = datetime.now(timezone.utc)
         duration = (end - start).total_seconds()
 
         step["status"] = "completed"
@@ -108,8 +130,8 @@ class PipelineCheckpoint:
             self.state["steps"][step_id] = {"name": step_name}
 
         step = self.state["steps"][step_id]
-        start = datetime.fromisoformat(step.get("start_time", datetime.utcnow().isoformat()))
-        end = datetime.utcnow()
+        start = _parse_iso_or_now(step.get("start_time"))
+        end = datetime.now(timezone.utc)
         duration = (end - start).total_seconds()
 
         step["status"] = "failed"
@@ -202,7 +224,7 @@ class PipelineCheckpoint:
     def _structured_log(self, level: str, step: str, message: str, exit_code: Optional[int]) -> None:
         """Write structured log entry to JSON log file."""
         log_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utc_now_iso(),
             "level": level,
             "step": step,
             "message": message,
@@ -219,6 +241,68 @@ class PipelineCheckpoint:
 
         logs.append(log_entry)
         STRUCTURED_LOG.write_text(json.dumps(logs, indent=2), encoding="utf-8")
+
+    @staticmethod
+    def _require_file(path: Path, minimum_bytes: int = 1) -> None:
+        """Require that file exists and has at least minimum_bytes size."""
+        if not path.exists() or not path.is_file():
+            raise ValidationError(f"Missing expected output file: {path.relative_to(ROOT)}")
+        if path.stat().st_size < minimum_bytes:
+            raise ValidationError(
+                f"Output file is too small ({path.stat().st_size} bytes): {path.relative_to(ROOT)}"
+            )
+
+    @staticmethod
+    def _require_json(path: Path, required_keys: Optional[List[str]] = None) -> None:
+        """Require that a JSON file exists, parses, and optionally has required keys."""
+        PipelineCheckpoint._require_file(path, minimum_bytes=2)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as ex:
+            raise ValidationError(f"Invalid JSON at {path.relative_to(ROOT)}: {ex}") from ex
+
+        if required_keys:
+            if not isinstance(payload, dict):
+                raise ValidationError(f"Expected JSON object at {path.relative_to(ROOT)}")
+            for key in required_keys:
+                if key not in payload:
+                    raise ValidationError(f"Missing key '{key}' in {path.relative_to(ROOT)}")
+
+    def validate_step_output(self, step_id: int) -> None:
+        """
+        Validate key outputs after selected steps.
+
+        Raises ValidationError on failures so the runner can mark the step failed.
+        """
+        if step_id == 7:
+            # Align Lyrics To Audio
+            self._require_file(ROOT / "02_INPUT" / "lyrics" / "lyrics_timed.srt")
+            self._require_file(ROOT / "02_INPUT" / "lyrics" / "lyrics_timed.pre_offset.srt")
+            return
+
+        if step_id == 8:
+            # Generate ASS Subtitles
+            self._require_file(ROOT / "02_INPUT" / "lyrics" / "lyrics_styled.ass")
+            self._require_file(ROOT / "02_INPUT" / "lyrics" / "lyrics_timed.srt")
+            return
+
+        if step_id == 10:
+            # Build Sections
+            self._require_json(ROOT / "03_WORK" / "sections" / "timeline.json", required_keys=["sections"])
+            return
+
+        if step_id == 13:
+            # Build Timeline Manifest
+            self._require_json(
+                ROOT / "03_WORK" / "sections" / "timeline_manifest.json",
+                required_keys=["sections"],
+            )
+            return
+
+        if step_id == 14:
+            # Render Master Video
+            self._require_file(ROOT / "04_OUTPUT" / "youtube_16x9" / "master_clean.mp4", minimum_bytes=1024)
+            return
 
 
 def get_checkpoint() -> PipelineCheckpoint:

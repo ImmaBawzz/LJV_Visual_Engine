@@ -1,0 +1,86 @@
+name: Auto-label Good First Issues
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    
+    steps:
+      - name: Check for good first issue patterns
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const labelsToAdd = [];
+            
+            // Auto-label documentation issues
+            if (issue.body && issue.body.toLowerCase().includes('documentation') || 
+                issue.body && issue.body.toLowerCase().includes('docs')) {
+              labelsToAdd.push('documentation');
+            }
+            
+            // Auto-label beginner-friendly issues
+            if (issue.body && (
+                issue.body.toLowerCase().includes('simple') ||
+                issue.body.toLowerCase().includes('easy') ||
+                issue.body.toLowerCase().includes('beginner') ||
+                issue.body.toLowerCase().includes('starter')
+              )) {
+              labelsToAdd.push('good first issue');
+            }
+            
+            // Auto-label issues about examples or templates
+            if (issue.body && (
+                issue.body.toLowerCase().includes('example') ||
+                issue.body.toLowerCase().includes('template') ||
+                issue.body.toLowerCase().includes('sample')
+              )) {
+              labelsToAdd.push('examples');
+            }
+            
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labelsToAdd
+              });
+            }
+
+      - name: Label issues in specific paths
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            
+            // Check if issue mentions specific file paths
+            const pathLabels = {
+              'docs/': 'documentation',
+              'examples/': 'examples',
+              'templates/': 'templates',
+              '06_TEMPLATES/': 'templates',
+              '09_DOCS/': 'documentation'
+            };
+            
+            const labelsToAdd = [];
+            for (const [path, label] of Object.entries(pathLabels)) {
+              if (issue.body && issue.body.includes(path)) {
+                labelsToAdd.push(label);
+              }
+            }
+            
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labelsToAdd
+              });
+            }

@@ -1,0 +1,57 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "LJV Visual Engine",
+  "alternateName": "LJV Velocity Letters",
+  "description": "A professional-grade audio-reactive lyric visualization pipeline for producing high-quality music video assets with automated timing alignment, quality assurance, and checkpoint recovery.",
+  "url": "https://github.com/ImmaBawzz/LJV_Visual_Engine",
+  "codeRepository": "https://github.com/ImmaBawzz/LJV_Visual_Engine",
+  "programmingLanguage": [
+    "Python",
+    "PowerShell",
+    "Batch"
+  ],
+  "applicationCategory": "Video Production Tool",
+  "operatingSystem": "Windows",
+  "license": "https://github.com/ImmaBawzz/LJV_Visual_Engine/blob/main/LICENSE",
+  "author": {
+    "@type": "Person",
+    "name": "ImmaBawzz",
+    "url": "https://github.com/ImmaBawzz"
+  },
+  "contributor": [
+    {
+      "@type": "Organization",
+      "name": "LJV Visual Engine Contributors"
+    }
+  ],
+  "dateCreated": "2026",
+  "dateModified": "2026-04-01",
+  "version": "1.0.0",
+  "softwareRequirements": {
+    "@type": "SoftwareApplication",
+    "name": "FFmpeg",
+    "version": "4.4+"
+  },
+  "runtimePlatform": "Windows 10+",
+  "featureList": [
+    "Audio-aligned lyric timing using OpenAI Whisper",
+    "Resumable pipeline with checkpoint recovery",
+    "Automated quality assurance and validation",
+    "Modular workflow architecture",
+    "Production-ready delivery manifests",
+    "Multiple export formats (16x9, 9x16, 1x1)",
+    "Live dashboard monitoring",
+    "Schema validation for configuration"
+  ],
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "downloadUrl": "https://github.com/ImmaBawzz/LJV_Visual_E/releases/latest",
+  "issueTracker": "https://github.com/ImmaBawzz/LJV_Visual_Engine/issues",
+  "discussionUrl": "https://github.com/ImmaBawzz/LJV_Visual_Engine/discussions",
+  "releaseNotes": "https://github.com/ImmaBawzz/LJV_Visual_Engine/blob/main/09_DOCS/RELEASE_CHECKLIST.md",
+  "keywords": "music visualization, lyric video, audio-reactive, ffmpeg, python, video pipeline, music production, subtitle automation, Whisper ASR, music video generator, Windows PowerShell, batch processing, checkpoint recovery, quality assurance, music tech, audio synchronization"
+}

@@ -28,17 +28,7 @@ foreach($section in $manifestJson.sections){
     $duration = [double]$section.duration_sec
     $outfile = Join-Path $sectionsDir ($section.output_name)
 
-    $vfArgs = @()
-    if($section.title){
-        $titleOverlay = Join-Path $root ("03_WORK\overlays\title_{0}.ass" -f $section.title)
-        if(Test-Path $titleOverlay){
-            $titleOverlayPath = (Resolve-Path $titleOverlay).Path -replace '\\','/'
-            $titleOverlayPath = $titleOverlayPath -replace ':','\:'
-            $vfArgs = @("-vf", "ass='$titleOverlayPath'")
-        }
-    }
-
-    & $ffmpeg -y -stream_loop -1 -i $source -t $duration -an -r $targetFps @vfArgs -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p $outfile
+    & $ffmpeg -y -stream_loop -1 -i $source -t $duration -an -r $targetFps -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p $outfile
     if($LASTEXITCODE -ne 0){ throw "Failed rendering section $($section.label)" }
 
     $concatLines += "file '$((Resolve-Path $outfile).Path.Replace("'", "''"))'"

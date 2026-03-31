@@ -49,6 +49,7 @@ For details, see [CHECKPOINT_GUIDE.md](../09_DOCS/CHECKPOINT_GUIDE.md).
 ## 5. Review validation and QA reports
 After (or during) a run, check:
 - `03_WORK/reports/preflight_validation_report.json`
+- `03_WORK/reports/schema_validation_report.json`
 - `03_WORK/reports/quality_gate_report.json`
 - `03_WORK/reports/release_readiness_report.json`
 
@@ -56,7 +57,15 @@ The pipeline now fails fast when preflight validation or quality gate checks fai
 
 The repo keeps `02_INPUT/`, `03_WORK/`, and `04_OUTPUT/` as empty tracked scaffolds. Your actual media, reports, and renders stay ignored by git.
 
-## 6. Final outputs
+## 6. Run reliability tests (recommended)
+Run these before major config or pipeline edits:
+
+```powershell
+c:/Users/Shadow/Downloads/LJV_Visual_Engine_RELEASE_Package/.venv/Scripts/python.exe 05_SCRIPTS/core/test_schema_and_failfast.py
+c:/Users/Shadow/Downloads/LJV_Visual_Engine_RELEASE_Package/.venv/Scripts/python.exe 05_SCRIPTS/core/test_checkpoint.py
+```
+
+## 7. Final outputs
 Check:
 - `04_OUTPUT/youtube_16x9/master_clean.mp4`
 - `04_OUTPUT/youtube_16x9/master_lyrics.mp4`

@@ -205,7 +205,7 @@ The following are NOT yet implemented but are documented in HOLLYWOOD_PRODUCTION
 - Input validation (pre-flight checks)
 - Advanced QA suite (bitrate, sync, loudness checks)
 - CLI with job queue
-- Web progress dashboard
+- Web progress dashboard (prototype started in `05_SCRIPTS/dashboard/`)
 - Parallel rendering
 - GPU acceleration
 - Advanced metadata management

@@ -10,8 +10,13 @@
 ## Config
 - [ ] paths_config.json correct
 - [ ] project_config.json correct
+- [ ] schema validation report PASS (03_WORK/reports/schema_validation_report.json)
 - [ ] export presets reviewed
 - [ ] lyric style preset chosen
+
+## Reliability tests
+- [ ] test_schema_and_failfast.py passes
+- [ ] test_checkpoint.py passes
 
 ## Rendering
 - [ ] master_clean.mp4 created
@@ -39,3 +44,8 @@
 - [ ] release report written
 - [ ] final bundle assembled
 - [ ] archive copy saved
+
+## Dashboard ops (Phase 2)
+- [ ] dashboard launches on localhost and API health is OK
+- [ ] live step status and logs update during a run
+- [ ] start/resume/retry controls are disabled while run is active

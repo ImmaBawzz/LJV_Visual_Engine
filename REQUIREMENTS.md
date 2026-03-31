@@ -8,6 +8,8 @@ These are for general utility scripts:
 opencv-python>=4.8.0
 numpy>=1.24.0
 pillow>=10.0.0
+fastapi>=0.115.0
+uvicorn>=0.30.0
 ```
 
 ## Audio Alignment Environment (Python 3.10, auto-provisioned)

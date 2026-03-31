@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LJV Export Presets",
+  "type": "object",
+  "required": [
+    "youtube_16x9",
+    "vertical_9x16",
+    "square_1x1",
+    "enhancement_presets"
+  ],
+  "properties": {
+    "youtube_16x9": {
+      "type": "object",
+      "required": ["width", "height", "fps", "crf", "subtitle_margin_v"],
+      "properties": {
+        "width": { "type": "number", "minimum": 1 },
+        "height": { "type": "number", "minimum": 1 },
+        "fps": { "type": "number", "minimum": 1 },
+        "crf": { "type": "number", "minimum": 0 },
+        "subtitle_margin_v": { "type": "number", "minimum": 0 }
+      }
+    },
+    "vertical_9x16": {
+      "type": "object",
+      "required": ["width", "height", "fps", "crf", "subtitle_margin_v"],
+      "properties": {
+        "width": { "type": "number", "minimum": 1 },
+        "height": { "type": "number", "minimum": 1 },
+        "fps": { "type": "number", "minimum": 1 },
+        "crf": { "type": "number", "minimum": 0 },
+        "subtitle_margin_v": { "type": "number", "minimum": 0 }
+      }
+    },
+    "square_1x1": {
+      "type": "object",
+      "required": ["width", "height", "fps", "crf", "subtitle_margin_v"],
+      "properties": {
+        "width": { "type": "number", "minimum": 1 },
+        "height": { "type": "number", "minimum": 1 },
+        "fps": { "type": "number", "minimum": 1 },
+        "crf": { "type": "number", "minimum": 0 },
+        "subtitle_margin_v": { "type": "number", "minimum": 0 }
+      }
+    },
+    "enhancement_presets": {
+      "type": "object",
+      "required": ["detail_only_720p", "detail_upscale_1080p"],
+      "properties": {
+        "detail_only_720p": {
+          "type": "object",
+          "required": ["filters"],
+          "properties": {
+            "filters": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "detail_upscale_1080p": {
+          "type": "object",
+          "required": ["filters"],
+          "properties": {
+            "filters": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

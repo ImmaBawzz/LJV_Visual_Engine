@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LJV Live Pipeline Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="aurora"></div>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="kicker">LJV Visual Engine</p>
+        <h1>Live Pipeline Control</h1>
+      </div>
+      <div class="status-pill" id="connectionStatus">Connecting...</div>
+    </header>
+
+    <section class="panel metrics">
+      <article>
+        <h2>Pipeline State</h2>
+        <p id="overallStatus">unknown</p>
+      </article>
+      <article>
+        <h2>Progress</h2>
+        <p><span id="progressPct">0</span>%</p>
+        <div class="progress-track"><div id="progressFill"></div></div>
+      </article>
+      <article>
+        <h2>Current Step</h2>
+        <p id="runningStep">idle</p>
+      </article>
+      <article>
+        <h2>Runtime</h2>
+        <p id="runtimeState">inactive</p>
+      </article>
+    </section>
+
+    <section class="panel controls">
+      <h2>Controls</h2>
+      <div class="button-row">
+        <button id="startBtn">Start</button>
+        <button id="resumeBtn">Resume</button>
+        <button id="retryBtn">Retry Failed</button>
+        <button id="forceBtn" class="danger">Force Restart</button>
+      </div>
+      <p class="hint">Controls are guarded. If a run is active, new starts are blocked.</p>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Step Timeline</h2>
+        <div id="stepsList" class="steps-list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>QA Reports</h2>
+        <div id="reportCards" class="report-cards"></div>
+      </article>
+    </section>
+
+    <section class="grid preview-grid">
+      <article class="panel">
+        <h2>Latest Preview</h2>
+        <div class="player-wrap">
+          <video id="previewPlayer" controls preload="metadata"></video>
+        </div>
+        <div id="previewMeta" class="meta-line">No preview available yet.</div>
+      </article>
+
+      <article class="panel">
+        <h2>Format Layouts</h2>
+        <div id="layoutCards" class="layout-cards"></div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Live Logs</h2>
+        <div id="logsBox" class="logs-box"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Asset Browser</h2>
+        <div id="assetBrowser" class="artifacts-box"></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Recent Artifacts</h2>
+      <div id="artifactsBox" class="artifacts-box wide"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

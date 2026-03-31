@@ -23,37 +23,9 @@
     "outro_sec": 18,
     "title_outro_sec": 20
   },
-  "lyric_style_default": "release_cinematic_verse",
-  "lyric_style_hook": "release_bold_hook",
-  "title_card_style": "release_title_card",
+  "lyric_style_default": "spotify_clean",
+  "lyric_style_hook": "hook_highlight",
   "reactive_preset": "subtle_emotional",
-  "subtitle_presentation": {
-    "lead_in_ms": 140,
-    "lead_out_ms": 80,
-    "max_phrase_words": 12,
-    "max_phrase_chars": 56,
-    "display_line_chars": 30,
-    "min_phrase_duration_sec": 0.95
-  },
-  "lyric_timing_overrides": [
-    {
-      "match_text": "Yeah...",
-      "start_sec": 10.66,
-      "end_sec": 12.06
-    }
-  ],
-  "lyric_timing_qc": {
-    "min_cue_duration_sec": 0.9,
-    "max_cue_duration_sec": 7.5,
-    "max_chars_per_second": 21.5,
-    "max_words_per_cue": 12,
-    "max_chars_per_line": 30,
-    "max_lines_per_cue": 2,
-    "max_warn_rate": 0.18,
-    "max_fail_rate": 0.35,
-    "max_review_count": 40,
-    "min_alignment_average_score": 50.0
-  },
   "enhancement": {
     "enabled": true,
     "preset": "detail_only_720p"

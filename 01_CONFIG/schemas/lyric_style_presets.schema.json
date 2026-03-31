@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LJV Lyric Style Presets",
+  "type": "object",
+  "required": [
+    "spotify_clean",
+    "cinematic_boxed",
+    "hook_highlight"
+  ],
+  "properties": {
+    "spotify_clean": {
+      "type": "object",
+      "required": [
+        "font",
+        "fontsize",
+        "primary_colour",
+        "outline_colour",
+        "back_colour",
+        "border_style",
+        "outline",
+        "shadow",
+        "alignment",
+        "margin_v",
+        "fad_in_ms",
+        "fad_out_ms"
+      ],
+      "properties": {
+        "font": { "type": "string", "minLength": 1 },
+        "fontsize": { "type": "number", "minimum": 1 },
+        "primary_colour": { "type": "string", "minLength": 1 },
+        "secondary_colour": { "type": "string", "minLength": 1 },
+        "outline_colour": { "type": "string", "minLength": 1 },
+        "back_colour": { "type": "string", "minLength": 1 },
+        "border_style": { "type": "number", "minimum": 0 },
+        "outline": { "type": "number", "minimum": 0 },
+        "shadow": { "type": "number", "minimum": 0 },
+        "alignment": { "type": "number", "minimum": 1 },
+        "margin_v": { "type": "number", "minimum": 0 },
+        "fad_in_ms": { "type": "number", "minimum": 0 },
+        "fad_out_ms": { "type": "number", "minimum": 0 }
+      }
+    },
+    "cinematic_boxed": {
+      "type": "object",
+      "required": [
+        "font",
+        "fontsize",
+        "primary_colour",
+        "outline_colour",
+        "back_colour",
+        "border_style",
+        "outline",
+        "shadow",
+        "alignment",
+        "margin_v",
+        "fad_in_ms",
+        "fad_out_ms"
+      ],
+      "properties": {
+        "font": { "type": "string", "minLength": 1 },
+        "fontsize": { "type": "number", "minimum": 1 },
+        "primary_colour": { "type": "string", "minLength": 1 },
+        "secondary_colour": { "type": "string", "minLength": 1 },
+        "outline_colour": { "type": "string", "minLength": 1 },
+        "back_colour": { "type": "string", "minLength": 1 },
+        "border_style": { "type": "number", "minimum": 0 },
+        "outline": { "type": "number", "minimum": 0 },
+        "shadow": { "type": "number", "minimum": 0 },
+        "alignment": { "type": "number", "minimum": 1 },
+        "margin_v": { "type": "number", "minimum": 0 },
+        "fad_in_ms": { "type": "number", "minimum": 0 },
+        "fad_out_ms": { "type": "number", "minimum": 0 }
+      }
+    },
+    "hook_highlight": {
+      "type": "object",
+      "required": [
+        "font",
+        "fontsize",
+        "primary_colour",
+        "outline_colour",
+        "back_colour",
+        "border_style",
+        "outline",
+        "shadow",
+        "alignment",
+        "margin_v",
+        "fad_in_ms",
+        "fad_out_ms"
+      ],
+      "properties": {
+        "font": { "type": "string", "minLength": 1 },
+        "fontsize": { "type": "number", "minimum": 1 },
+        "primary_colour": { "type": "string", "minLength": 1 },
+        "secondary_colour": { "type": "string", "minLength": 1 },
+        "outline_colour": { "type": "string", "minLength": 1 },
+        "back_colour": { "type": "string", "minLength": 1 },
+        "border_style": { "type": "number", "minimum": 0 },
+        "outline": { "type": "number", "minimum": 0 },
+        "shadow": { "type": "number", "minimum": 0 },
+        "alignment": { "type": "number", "minimum": 1 },
+        "margin_v": { "type": "number", "minimum": 0 },
+        "fad_in_ms": { "type": "number", "minimum": 0 },
+        "fad_out_ms": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

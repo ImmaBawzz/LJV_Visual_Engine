@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LJV Reactive Presets",
+  "type": "object",
+  "required": [
+    "subtle_emotional",
+    "aggressive_festival"
+  ],
+  "properties": {
+    "subtle_emotional": {
+      "type": "object",
+      "required": [
+        "zoom_breath",
+        "brightness_pulse",
+        "vignette_pulse",
+        "hook_lift",
+        "climax_lift"
+      ],
+      "properties": {
+        "zoom_breath": { "type": "number", "minimum": 0 },
+        "brightness_pulse": { "type": "number", "minimum": 0 },
+        "vignette_pulse": { "type": "number", "minimum": 0 },
+        "hook_lift": { "type": "number", "minimum": 0 },
+        "climax_lift": { "type": "number", "minimum": 0 }
+      }
+    },
+    "aggressive_festival": {
+      "type": "object",
+      "required": [
+        "zoom_breath",
+        "brightness_pulse",
+        "vignette_pulse",
+        "hook_lift",
+        "climax_lift"
+      ],
+      "properties": {
+        "zoom_breath": { "type": "number", "minimum": 0 },
+        "brightness_pulse": { "type": "number", "minimum": 0 },
+        "vignette_pulse": { "type": "number", "minimum": 0 },
+        "hook_lift": { "type": "number", "minimum": 0 },
+        "climax_lift": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

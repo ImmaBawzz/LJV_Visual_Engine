@@ -77,6 +77,31 @@ For detailed usage and recovery steps, see [QUICKSTART.md](./00_README/QUICKSTAR
 - **[CHECKPOINT GUIDE](./09_DOCS/CHECKPOINT_GUIDE.md)** — Recovery and resume workflows
 - **[RELEASE CHECKLIST](./09_DOCS/RELEASE_CHECKLIST.md)** — Pre-delivery validation steps
 
+## Live Dashboard (Phase 2)
+
+The repository now includes a local live dashboard prototype for run monitoring and control:
+
+- **API + UI entrypoint:** `05_SCRIPTS/dashboard/run_dashboard.ps1`
+- **Backend service:** `05_SCRIPTS/dashboard/app.py` (FastAPI)
+- **Frontend:** `05_SCRIPTS/dashboard/static/`
+
+### Launch
+
+```powershell
+cd .\05_SCRIPTS\dashboard
+powershell -ExecutionPolicy Bypass -File .\run_dashboard.ps1 -Port 8787
+```
+
+Then open: `http://127.0.0.1:8787`
+
+### What it supports now
+
+- Live checkpoint progress and active step visibility
+- Incremental structured log tailing
+- QA/report summary cards (preflight, quality gate, readiness)
+- Output artifact listing from `04_OUTPUT`
+- Guarded controls: **Start**, **Resume**, **Retry Failed**, **Force Restart**
+
 ## Core Modules
 
 ### `05_SCRIPTS/core/`

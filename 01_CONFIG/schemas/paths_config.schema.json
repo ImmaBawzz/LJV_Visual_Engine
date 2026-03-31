@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LJV Paths Config",
+  "type": "object",
+  "required": [
+    "ffmpeg",
+    "ffprobe",
+    "python",
+    "font_primary"
+  ],
+  "properties": {
+    "ffmpeg": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ffprobe": {
+      "type": "string",
+      "minLength": 1
+    },
+    "python": {
+      "type": "string",
+      "minLength": 1
+    },
+    "font_primary": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

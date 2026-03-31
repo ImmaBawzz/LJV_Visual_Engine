@@ -1,8 +1,20 @@
 # Contributing to LJV Visual Engine
 
+[![Good First Issues](https://img.shields.io/github/issues/ImmaBawzz/LJV_Visual_Engine/good%20first%20issue?color=green&logo=github)](https://github.com/ImmaBawzz/LJV_Visual_Engine/issues?q=is%3Aopen+is%3Aissue+label%3A"good+first+issue")
+[![Documentation Issues](https://img.shields.io/github/issues/ImmaBawzz/LJV_Visual_Engine/documentation?color=blue&logo=github)](https://github.com/ImmaBawzz/LJV_Visual_Engine/issues?q=is%3Aopen+is%3Aissue+label%3Adocumentation)
+
 Thank you for your interest in contributing! This document outlines guidelines for reporting issues, requesting features, and submitting code changes.
 
-## Reporting Issues
+## Quick Links
+
+- 📋 [Issue Tracker](https://github.com/ImmaBawzz/LJV_Visual_Engine/issues)
+- 💬 [Discussions](https://github.com/ImmaBawzz/LJV_Visual_Engine/discussions)
+- 📖 [Documentation](./09_DOCS/)
+- 🎯 [Good First Issues](https://github.com/ImmaBawzz/LJV_Visual_Engine/issues?q=is%3Aopen+is%3Aissue+label%3A"good+first+issue")
+
+## How to Contribute
+
+### 1. Reporting Issues
 
 When reporting a bug, please provide:
 
@@ -35,7 +47,7 @@ Search exhausted at word index 487 (of 553)
 - 03_WORK/analysis/lyrics_alignment_report.json
 ```
 
-## Feature Requests
+### 2. Feature Requests
 
 Suggest new features by describing:
 
@@ -48,6 +60,9 @@ Examples of welcome contributions:
 - ✅ New output format support (e.g., `.mov` export)
 - ✅ Additional QA metrics or validation checks
 - ✅ Configuration presets for common video specs
+- ✅ Enhanced dashboard features
+- ✅ Additional social media export formats
+- ✅ Improved error handling and recovery
 - ✅ Performance optimizations (faster Whisper inference, batch processing)
 - ✅ Cross-platform support (Linux/macOS bash equivalents)
 - ⚠️ Breaking changes to checkpoint format (requires careful migration)
@@ -190,6 +205,57 @@ Check the documentation first:
 - [OPERATING_MODEL.md](./09_DOCS/OPERATING_MODEL.md) — Design and workflow
 - [CHECKPOINT_GUIDE.md](./09_DOCS/CHECKPOINT_GUIDE.md) — Recovery and resume
 - [RELEASE_CHECKLIST.md](./09_DOCS/RELEASE_CHECKLIST.md) — Pre-delivery steps
+
+## AI Agent & Discoverability
+
+This repository is optimized for discovery by both human developers and AI coding agents:
+
+### Structured Metadata
+
+- **JSON-LD Schema**: `.github/metadata.jsonld` provides machine-readable project information
+- **Open Graph Tags**: `.github/seo_metadata.html` contains social sharing metadata
+- **GitHub Topics**: Repository is tagged with relevant keywords for discovery
+
+### API Access
+
+The repository metadata can be accessed programmatically:
+
+```bash
+# GitHub API
+curl https://api.github.com/repos/ImmaBawzz/LJV_Visual_Engine
+
+# Local API (when running)
+curl http://localhost:8000/repo-info
+curl http://localhost:8000/project-info
+curl http://localhost:8000/features
+```
+
+### Vector Search & Embeddings
+
+README and documentation are indexed daily for semantic search:
+
+- **Embedding Generation**: Automated via GitHub Actions workflow
+- **Storage**: Pinecone vector database for fast similarity search
+- **Schedule**: Re-indexed at 12:00 AM UTC daily
+
+### Auto-Labeling
+
+Issues are automatically labeled based on content:
+
+- `good first issue` — Beginner-friendly contributions
+- `documentation` — Docs-related issues
+- `examples` — Template and sample code issues
+- `templates` — 06_TEMPLATES directory issues
+
+### Contributing to Discoverability
+
+You can help improve repository discoverability by:
+
+1. **Adding keywords** to README and metadata files
+2. **Writing clear issue descriptions** with relevant technical terms
+3. **Creating example scripts** in `examples/` or `06_TEMPLATES/`
+4. **Updating documentation** with usage patterns
+5. **Adding schema validation** for new configuration files
 
 ## Code of Conduct
 

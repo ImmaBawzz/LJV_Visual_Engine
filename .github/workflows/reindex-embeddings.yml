@@ -1,0 +1,63 @@
+name: Re-index README for Embeddings
+
+on:
+  schedule:
+    # Run daily at 12:00 AM UTC
+    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'README.md'
+      - '00_README/**'
+      - '09_DOCS/**'
+  workflow_dispatch:
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install cryptography
+          # Only install openai and pinecone if secrets are available
+          if [ -n "$OPENAI_API_KEY" ]; then
+            pip install openai pinecone-client
+          else
+            echo "⚠️  OPENAI_API_KEY not set - using mock services"
+          fi
+            
+      - name: Run embedding script (with auto-fallback to mock)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PINEcone_API_KEY: ${{ secrets.PINEcone_API_KEY }}
+          PINEcone_ENVIRONMENT: ${{ secrets.PINEcone_ENVIRONMENT }}
+          USE_mock_SERVICES: ${{ secrets.OPENAI_API_KEY && 'false' || 'true' }}
+        run: |
+          python 05_SCRIPTS/tools/embed_and_upsert.py
+          
+      - name: Check if mock services were used
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "✅ Used mock embedding service (no API key required)"
+            echo "📊 Mock vectors stored in: 03_WORK/temp/mock_pinecone/"
+          else
+            echo "✅ Used real OpenAI API with provided key"
+          fi
+            
+      - name: Log indexing results
+        run: |
+          echo "Indexing completed at $(date)"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Mode: ${USE_mock_SERVICES:-true}"
