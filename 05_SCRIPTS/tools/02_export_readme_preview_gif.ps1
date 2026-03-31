@@ -1,5 +1,3 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [Parameter(Mandatory = $true)]
     [string]$SourceVideo,
@@ -9,6 +7,8 @@ param(
     [int]$Width = 960,
     [int]$Fps = 12
 )
+
+$ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $pathsConfigPath = Join-Path $root "01_CONFIG\paths_config.json"
@@ -35,7 +35,7 @@ $outputDir = Split-Path -Parent $resolvedOutput
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
 $palettePath = Join-Path ([System.IO.Path]::GetTempPath()) ("readme-preview-" + [guid]::NewGuid().ToString() + ".png")
-$filter = "fps=$Fps,scale=$Width:-1:flags=lanczos"
+$filter = "fps=$Fps,scale=${Width}:-1:flags=lanczos"
 
 try {
     & $ffmpeg -y -ss $StartSec -t $DurationSec -i $resolvedSource -vf "$filter,palettegen=stats_mode=diff" $palettePath | Out-Null

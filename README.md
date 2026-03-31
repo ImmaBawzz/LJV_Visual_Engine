@@ -175,6 +175,13 @@ The alignment system:
 
 See `03_WORK/analysis/lyrics_alignment_report.json` for full alignment traceability and confidence scores.
 
+Professional lyric timing QA is enforced during `16_run_quality_gate.py` using thresholds from `01_CONFIG/project_config.json` (`lyric_timing_qc`):
+- no overlapping cues
+- cue duration target range (default 1.0s-8.0s)
+- readability density limits (default <=20 characters/second, <=18 words/cue)
+- subtitle layout limits (default <=2 lines/cue, <=48 chars/line)
+- alignment diagnostics floor (default `review_count <= 0`, `average_score >= 92`)
+
 ## Contributing
 
 This is a release-grade engine designed for professional use. Issues and feature requests are welcome.

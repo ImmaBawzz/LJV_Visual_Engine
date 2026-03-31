@@ -24,6 +24,11 @@
 ## Quality
 - [ ] lyrics readable
 - [ ] audio synced
+- [ ] no overlapping lyric cues in lyrics_timed.srt
+- [ ] cue duration passes the configured lyric_timing_qc thresholds in 01_CONFIG/project_config.json
+- [ ] lyric density passes the configured lyric_timing_qc thresholds in 01_CONFIG/project_config.json
+- [ ] subtitle layout passes the configured lyric_timing_qc thresholds in 01_CONFIG/project_config.json
+- [ ] alignment diagnostics pass the configured lyric_timing_qc thresholds in 01_CONFIG/project_config.json
 - [ ] no missing audio in final exports
 - [ ] no broken subtitle path issues
 - [ ] no harsh visible loop jump

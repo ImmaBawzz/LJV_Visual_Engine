@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $scriptsDir = Join-Path $root "05_SCRIPTS"
 $checkpointScript = Join-Path $scriptsDir "core\checkpoint_manager.py"
+$checkpointModuleDir = Join-Path $scriptsDir "core"
 
 # Define pipeline steps
 $steps = @(
@@ -60,6 +61,16 @@ function Show-Checkpoint-Status {
     Write-Host ""
 }
 
+function Invoke-CheckpointCommand {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$commandBody
+    )
+
+    $pythonCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDir + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); " + $commandBody
+    python -c $pythonCmd 2>$null
+}
+
 # Execute a single step
 function Execute-Step {
     param(
@@ -75,8 +86,7 @@ function Execute-Step {
 
     if (-not (Test-Path $scriptPath)) {
         Write-Host "ERROR: Script not found: $scriptPath" -ForegroundColor Red
-        $failPythonCmd = "import sys; sys.path.insert(0, '$scriptsDir/core'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); cp.mark_step_failed($stepId, '$stepName', 127, 'Script not found')"
-        python -c $failPythonCmd 2>$null
+        Invoke-CheckpointCommand "cp.mark_step_failed($stepId, '$stepName', 127, 'Script not found')"
         return 127
     }
 
@@ -85,8 +95,7 @@ function Execute-Step {
     Write-Host "Script: $scriptPath" -ForegroundColor Gray
 
     # Start checkpoint
-    $initCmd = "import sys; sys.path.insert(0, '$scriptsDir/core'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); cp.mark_step_started($stepId, '$stepName')"
-    python -c $initCmd 2>$null
+    Invoke-CheckpointCommand "cp.mark_step_started($stepId, '$stepName')"
 
     # Execute script
     $exitCode = 0
@@ -115,14 +124,12 @@ function Execute-Step {
 
     # Record result
     if ($exitCode -eq 0) {
-        $completeCmd = "import sys; sys.path.insert(0, '$scriptsDir/core'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); cp.mark_step_complete($stepId, '$stepName', 0)"
-        python -c $completeCmd 2>$null
+        Invoke-CheckpointCommand "cp.mark_step_complete($stepId, '$stepName', 0)"
         Write-Host "✓ Step $stepId complete" -ForegroundColor Green
     }
     else {
         $errorMsg = "Exit code $exitCode"
-        $failCmd = "import sys; sys.path.insert(0, '$scriptsDir/core'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); cp.mark_step_failed($stepId, '$stepName', $exitCode, '$errorMsg')"
-        python -c $failCmd 2>$null
+        Invoke-CheckpointCommand "cp.mark_step_failed($stepId, '$stepName', $exitCode, '$errorMsg')"
         Write-Host "✗ Step $stepId failed (exit code: $exitCode)" -ForegroundColor Red
     }
 
@@ -137,7 +144,7 @@ try {
     # Determine starting point
     $startStep = 1
     if ($Resume) {
-        $resumeCmd = "import sys; sys.path.insert(0, '$scriptsDir/core'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); rp = cp.get_resume_point(); print(rp if rp else 1)"
+        $resumeCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDir + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); rp = cp.get_resume_point(); print(rp if rp else 1)"
         $resumePoint = python -c $resumeCmd 2>$null | Select-Object -Last 1
         if ($resumePoint -and $resumePoint -ne "None") {
             $startStep = [int]$resumePoint

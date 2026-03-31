@@ -1,4 +1,7 @@
 $ErrorActionPreference = "Stop"
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $venvDir = Join-Path $root ".venv-align310"
 $pythonExe = Join-Path $venvDir "Scripts\python.exe"
@@ -17,7 +20,7 @@ if (-not (Test-Path $pythonExe)) {
 }
 
 $packagesReady = $true
-& $pythonExe -m pip show openai-whisper rapidfuzz torch *> $null
+cmd /c ('"{0}" -m pip show openai-whisper rapidfuzz torch >nul 2>nul' -f $pythonExe)
 if ($LASTEXITCODE -ne 0) {
     $packagesReady = $false
 }
