@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import tempfile
@@ -13,7 +14,7 @@ from typing import Any, Dict, List
 from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Query, Depends, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,16 +28,18 @@ from auth.config import config as auth_config
 from auth.database import init_db as auth_init_db, get_db
 from auth.middleware import setup_security_middleware
 from auth.routes import router as auth_router
-from auth.guards import require_auth, require_admin, require_destructive_action_stepup, log_control_action
+from auth.guards import require_auth, require_admin, require_destructive_action_stepup, log_control_action, optional_auth
 
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[2]
-WORK_DIR = ROOT / "03_WORK"
+IS_VERCEL = bool(os.getenv("VERCEL"))
+RUNTIME_ROOT = Path("/tmp/ljv_runtime") if IS_VERCEL else ROOT
+WORK_DIR = RUNTIME_ROOT / "03_WORK"
 LOGS_DIR = WORK_DIR / "logs"
 REPORTS_DIR = WORK_DIR / "reports"
 ANALYSIS_DIR = WORK_DIR / "analysis"
-OUTPUT_DIR = ROOT / "04_OUTPUT"
+OUTPUT_DIR = RUNTIME_ROOT / "04_OUTPUT"
 CONFIG_DIR = ROOT / "01_CONFIG"
 
 CHECKPOINT_FILE = WORK_DIR / "pipeline_checkpoint.json"
@@ -454,12 +457,19 @@ def _start_pipeline(mode: str) -> Dict[str, Any]:
 
 
 @app.get("/")
-def dashboard_root() -> FileResponse:
+async def dashboard_root(request: Request, auth=Depends(optional_auth)):
+    if not auth:
+        return RedirectResponse("/login", status_code=302)
     return FileResponse(STATIC_DIR / "index.html")
 
 
-@app.get("/login.html")
+@app.get("/login")
 def login_page() -> FileResponse:
+    return FileResponse(STATIC_DIR / "login.html")
+
+
+@app.get("/login.html")
+def login_page_legacy() -> FileResponse:
     return FileResponse(STATIC_DIR / "login.html")
 
 

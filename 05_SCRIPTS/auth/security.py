@@ -30,6 +30,11 @@ def generate_state_token(length: int = 32) -> str:
     return secrets.token_urlsafe(length)
 
 
+def generate_password_reset_token(length: int = 32) -> str:
+    """Generate a short-lived password reset token."""
+    return secrets.token_urlsafe(length)
+
+
 def hash_token(token: str) -> str:
     """Hash a token for storage (one-way)."""
     return hashlib.sha256(token.encode()).hexdigest()

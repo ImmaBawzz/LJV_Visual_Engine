@@ -1,0 +1,11 @@
+{
+  "files": [
+    "05_SCRIPTS/auth/config.py",
+    "05_SCRIPTS/auth/database.py",
+    "05_SCRIPTS/auth/routes.py",
+    "05_SCRIPTS/auth/security.py",
+    "05_SCRIPTS/tools/auth0_settings_apply_api.mjs",
+    "05_SCRIPTS/tools/auth0_settings_check_api.mjs",
+    "05_SCRIPTS/tools/auth0_validate_env.mjs"
+  ]
+}

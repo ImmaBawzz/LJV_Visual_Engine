@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-04-01T06:19:48.967Z",
+  "algorithm": "sha256",
+  "files": {
+    "05_SCRIPTS/auth/config.py": "6b8f92a468d44baef93b6ee8989fe7f27610252017c9203b0d990b795ef8da4d",
+    "05_SCRIPTS/auth/database.py": "24b53af25bfb023168efe3887aa3a44bbb90613059217ad9bb55cb518ec4f8b4",
+    "05_SCRIPTS/auth/routes.py": "927b78ba3b51b29379f61ebc467b0535a61352d8108f9570e79b9866be7e7c26",
+    "05_SCRIPTS/auth/security.py": "3b0e74ea5591d0544bf3f3cbbafe2bcb049714edbffc761ac5e27cab89515013",
+    "05_SCRIPTS/tools/auth0_settings_apply_api.mjs": "2a9cb83ff57a4a358ad427307d2989d28189fff18daeebf8d1077fc812ae7380",
+    "05_SCRIPTS/tools/auth0_settings_check_api.mjs": "afd11bd240c44fe07d8f63e5598a318ceb13658fd025d6eb9a63d31eb9826848",
+    "05_SCRIPTS/tools/auth0_validate_env.mjs": "d822e2d7b76dc445ff4542ce8ef6c54bda242b991bc033a4b90b1dba7e5832c0"
+  }
+}

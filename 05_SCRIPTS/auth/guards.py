@@ -51,6 +51,25 @@ async def require_auth(
     return (user, session_id)
 
 
+async def optional_auth(
+    request: Request, db: DBSession = Depends(get_db)
+):
+    """
+    Dependency: return (user, session_id) if authenticated, else None.
+
+    Does NOT raise — use for routes that should redirect rather than 401.
+    """
+    session_id = _get_session_id_from_request(request)
+    if not session_id:
+        return None
+
+    user = get_user_from_session(db, session_id)
+    if not user or not user.is_active:
+        return None
+
+    return (user, session_id)
+
+
 async def require_admin(
     request: Request, db: DBSession = Depends(get_db)
 ):
