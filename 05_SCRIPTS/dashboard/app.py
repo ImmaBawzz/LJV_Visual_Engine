@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from timeline_manager import TimelineManager, TimelineConfig, TimelineTrack, TimelineClip
 
 # Add auth module to path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "auth"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from auth.config import config as auth_config
 from auth.database import init_db as auth_init_db, get_db
 from auth.middleware import setup_security_middleware
@@ -456,6 +456,11 @@ def _start_pipeline(mode: str) -> Dict[str, Any]:
 @app.get("/")
 def dashboard_root() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/login.html")
+def login_page() -> FileResponse:
+    return FileResponse(STATIC_DIR / "login.html")
 
 
 @app.get("/api/health")

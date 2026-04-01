@@ -264,6 +264,97 @@
                 transform: rotate(360deg);
             }
         }
+
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            transition: all 0.3s;
+            width: 0%;
+        }
+
+        .password-strength-bar.weak {
+            background: #ff6b6b;
+            width: 33%;
+        }
+
+        .password-strength-bar.fair {
+            background: #ffa940;
+            width: 66%;
+        }
+
+        .password-strength-bar.strong {
+            background: #52c41a;
+            width: 100%;
+        }
+
+        .password-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: normal;
+            cursor: pointer;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-bottom: 16px;
+        }
+
+        .forgot-password a {
+            font-size: 12px;
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .forgot-password a:hover {
+            color: #5568d3;
+            text-decoration: underline;
+        }
+
+        .footer-text {
+            font-size: 11px;
+            color: #ccc;
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .footer-text a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -287,17 +378,24 @@
             <div class="login-form">
                 <div class="form-group">
                     <label for="login-email">Email</label>
-                    <input type="email" id="login-email" name="email" required />
+                    <input type="email" id="login-email" name="email" autocomplete="email" required />
                 </div>
                 <div class="form-group">
                     <label for="login-password">Password</label>
-                    <input type="password" id="login-password" name="password" required />
+                    <input type="password" id="login-password" name="password" autocomplete="current-password" required />
                 </div>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="login-remember" name="remember" />
+                <label for="login-remember">Remember me</label>
             </div>
             <button type="submit" class="btn-submit">
                 <span id="loginButtonText">Sign In</span>
                 <span class="loading" id="loginLoading"><span class="spinner"></span></span>
             </button>
+            <div class="forgot-password">
+                <a href="#" id="forgotPasswordBtn">Forgot password?</a>
+            </div>
         </form>
 
         <!-- Signup Form -->
@@ -305,15 +403,19 @@
             <div class="login-form">
                 <div class="form-group">
                     <label for="signup-email">Email</label>
-                    <input type="email" id="signup-email" name="email" required />
+                    <input type="email" id="signup-email" name="email" autocomplete="email" required />
                 </div>
                 <div class="form-group">
                     <label for="signup-password">Password</label>
-                    <input type="password" id="signup-password" name="password" required />
+                    <input type="password" id="signup-password" name="password" autocomplete="new-password" required />
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="strengthBar"></div>
+                    </div>
+                    <div class="password-hint" id="strengthHint">Password must be at least 8 characters</div>
                 </div>
                 <div class="form-group">
                     <label for="signup-password-confirm">Confirm Password</label>
-                    <input type="password" id="signup-password-confirm" name="password_confirm" required />
+                    <input type="password" id="signup-password-confirm" name="password_confirm" autocomplete="new-password" required />
                 </div>
             </div>
             <button type="submit" class="btn-submit">
@@ -338,12 +440,30 @@
             Sign In with Google
         </button>
 
-        <p style="text-align: center; margin-top: 24px; font-size: 12px; color: #999;">
-            Protected by secure authentication. Your session is encrypted.
-        </p>
+        <div class="footer-text">
+            <p>Protected by secure authentication. Your session is encrypted.</p>
+            <p style="margin-top: 8px;">
+                <a href="https://github.com/ImmaBawzz/LJV_Visual_Engine" target="_blank">GitHub</a> |
+                <a href="#" onclick="document.getElementById('privacyModal').style.display='block'; return false;">Privacy</a> |
+                <a href="#" onclick="document.getElementById('termsModal').style.display='block'; return false;">Terms</a>
+            </p>
+        </div>
     </div>
 
-    <script>
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:40px; border-radius:12px; max-width:400px; width:90%;">
+            <h2 style="margin-bottom:20px; font-size:18px; color:#333;">Reset Password</h2>
+            <p style="color:#666; margin-bottom:20px; font-size:14px;">Enter your email to receive password reset instructions.</p>
+            <input type="email" id="resetEmail" placeholder="Enter your email" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:16px;">
+            <div style="display:flex; gap:12px;">
+                <button class="btn-submit" style="flex:1;" id="sendResetBtn">Send Reset Link</button>
+                <button class="btn-secondary" style="flex:1;" onclick="document.getElementById('forgotPasswordModal').style.display='none';">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src=\"/static/auth-api.js\"></script>\n    <script>
         const errorEl = document.getElementById("errorMessage");
         const successEl = document.getElementById("successMessage");
 
@@ -372,21 +492,18 @@
                 document.getElementById("loginLoading").classList.add("show");
                 document.getElementById("loginButtonText").textContent = "";
 
-                const response = await fetch("/auth/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password }),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    // Store session in localStorage or redirect
-                    localStorage.setItem("ljv_session", data.session_id);
-                    window.location.href = "/";
+                await authAPI.login(email, password);
+                
+                // Remember email if checked
+                const rememberCheckbox = document.getElementById("login-remember");
+                if (rememberCheckbox.checked) {
+                    localStorage.setItem("ljv_remember_email", email);
                 } else {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.detail || "Login failed");
+                    localStorage.removeItem("ljv_remember_email");
                 }
+                
+                // Redirect to dashboard
+                window.location.href = "/";
             } catch (err) {
                 errorEl.textContent = err.message;
                 errorEl.classList.add("show");
@@ -420,20 +537,10 @@
                 document.getElementById("signupLoading").classList.add("show");
                 document.getElementById("signupButtonText").textContent = "";
 
-                const response = await fetch("/auth/signup", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password }),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    localStorage.setItem("ljv_session", data.session_id);
-                    window.location.href = "/";
-                } else {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.detail || "Signup failed");
-                }
+                await authAPI.signup(email, password);
+                
+                // Redirect to dashboard
+                window.location.href = "/";
             } catch (err) {
                 errorEl.textContent = err.message;
                 errorEl.classList.add("show");
@@ -447,6 +554,75 @@
         document.getElementById("googleLoginBtn").addEventListener("click", async (e) => {
             e.preventDefault();
             window.location.href = "/auth/google/authorize";
+        });
+
+        // Password Strength Meter
+        document.getElementById("signup-password").addEventListener("input", (e) => {
+            const password = e.target.value;
+            const strengthBar = document.getElementById("strengthBar");
+            const strengthHint = document.getElementById("strengthHint");
+            let strength = "weak";
+            let hint = "Weak password";
+
+            if (password.length >= 8) {
+                if (password.length >= 12 && /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) {
+                    strength = "strong";
+                    hint = "Strong password";
+                } else if (password.length >= 10 && (/[A-Z]/.test(password) || /[0-9]/.test(password))) {
+                    strength = "fair";
+                    hint = "Fair password";
+                }
+            }
+
+            strengthBar.className = `password-strength-bar ${strength}`;
+            strengthHint.textContent = hint;
+        });
+
+        // Forgot Password Handler
+        document.getElementById("forgotPasswordBtn").addEventListener("click", (e) => {
+            e.preventDefault();
+            document.getElementById("forgotPasswordModal").style.display = "block";
+        });
+
+        document.getElementById("sendResetBtn").addEventListener("click", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("resetEmail").value;
+            if (!email) {
+                alert("Please enter your email");
+                return;
+            }
+            try {
+                await authAPI.requestPasswordReset(email);
+                alert("Password reset link sent to your email");
+                document.getElementById("forgotPasswordModal").style.display = "none";
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        });
+
+        // Remember Me Functionality
+        window.addEventListener("load", () => {
+            const remembered = localStorage.getItem("ljv_remember_email");
+            if (remembered) {
+                document.getElementById("login-email").value = remembered;
+                document.getElementById("login-remember").checked = true;
+            }
+        });
+
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            const rememberCheckbox = document.getElementById("login-remember");
+            if (rememberCheckbox.checked) {
+                localStorage.setItem("ljv_remember_email", document.getElementById("login-email").value);
+            } else {
+                localStorage.removeItem("ljv_remember_email");
+            }
+        });
+
+        // Close modals on escape key
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                document.getElementById("forgotPasswordModal").style.display = "none";
+            }
         });
     </script>
 </body>
