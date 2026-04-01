@@ -29,6 +29,8 @@ class User(Base):
     provider_id = Column(String(255), nullable=True, unique=True)  # Google subject
     name = Column(String(255), nullable=True)
     profile_picture_url = Column(String(512), nullable=True)
+    reset_token_hash = Column(String(64), nullable=True)
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     is_active = Column(Integer, default=1)  # Boolean-like (0 or 1)
     is_admin = Column(Integer, default=0)  # Boolean-like (0 or 1)
@@ -92,6 +94,26 @@ def init_db() -> None:
     config.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     engine = get_engine()
     Base.metadata.create_all(bind=engine)
+    _ensure_user_table_columns(engine)
+
+
+def _ensure_user_table_columns(engine) -> None:
+    """Backfill schema columns for existing SQLite auth databases."""
+    with engine.connect() as conn:
+        table_info = conn.exec_driver_sql("PRAGMA table_info(users)").fetchall()
+        existing_columns = {row[1] for row in table_info}
+
+        if "reset_token_hash" not in existing_columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE users ADD COLUMN reset_token_hash VARCHAR(64)"
+            )
+
+        if "reset_token_expires_at" not in existing_columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE users ADD COLUMN reset_token_expires_at DATETIME"
+            )
+
+        conn.commit()
 
 
 def get_engine():

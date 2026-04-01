@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "scripts": {
+    "sq:branding": "node --env-file=.env ./05_SCRIPTS/tools/squarespace_branding_setup.mjs",
+    "sq:branding:fresh": "set \"SQ_FORCE_FRESH_LOGIN=true\" && node --env-file=.env ./05_SCRIPTS/tools/squarespace_branding_setup.mjs",
+    "auth0:assist": "node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_assist.mjs",
+    "auth0:apply": "node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_apply.mjs",
+    "auth0:check": "node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_check.mjs",
+    "auth0:validate-env": "node --env-file=.env ./05_SCRIPTS/tools/auth0_validate_env.mjs",
+    "auth0:apply:api": "node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_apply_api.mjs",
+    "auth0:check:api": "node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_check_api.mjs",
+    "auth0:fresh:assist": "set \"AUTH0_FORCE_FRESH_LOGIN=true\" && node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_assist.mjs",
+    "auth0:fresh:apply": "set \"AUTH0_FORCE_FRESH_LOGIN=true\" && node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_apply.mjs",
+    "auth0:fresh:check": "set \"AUTH0_FORCE_FRESH_LOGIN=true\" && node --env-file=.env ./05_SCRIPTS/tools/auth0_settings_check.mjs",
+    "security:integrity:generate": "node ./05_SCRIPTS/tools/generate_source_integrity_manifest.mjs",
+    "security:integrity:verify": "node ./05_SCRIPTS/tools/verify_source_integrity.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.59.0"
+  }
+}

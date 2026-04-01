@@ -215,6 +215,23 @@ The dashboard requires authentication for all control operations. See [AUTH_DEPL
 - Production deployment (TLS, reverse proxy, environment config)
 - Security checklist
 
+## Source Integrity Lock (Tamper Detection)
+
+Critical auth and automation files can be locked with SHA-256 integrity checks before release.
+
+Commands:
+
+```powershell
+npm run security:integrity:generate
+npm run security:integrity:verify
+```
+
+- Targets are defined in `01_CONFIG/source_integrity_targets.json`
+- Current baseline hashes are stored in `01_CONFIG/source_integrity_manifest.json`
+- If an important file is changed intentionally, regenerate the manifest and commit it with the source change
+
+This detects unauthorized file tampering, which is practical hardening for source-based projects.
+
 ## Lyrics & Timing
 
 Timing data lives in `02_INPUT/lyrics/`:

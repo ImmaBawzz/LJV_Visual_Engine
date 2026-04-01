@@ -91,6 +91,11 @@ class AuthConfig:
         os.getenv("LJV_AUTH_RATE_LIMIT_WINDOW_SEC", "300")
     )  # 5 min
 
+    # === Password Reset ===
+    PASSWORD_RESET_TOKEN_TTL_MINUTES: int = int(
+        os.getenv("LJV_PASSWORD_RESET_TOKEN_TTL_MINUTES", "30")
+    )
+
     # === Developer Mode ===
     # If True, session cookies are not marked Secure and CORS is relaxed
     DEBUG: bool = os.getenv("LJV_DEBUG", "false").lower() in ("true", "1", "yes")

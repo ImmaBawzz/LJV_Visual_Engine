@@ -53,3 +53,28 @@ Thumbs.db
 *.temp
 *.bak
 ~*
+*.log
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local secrets and browser auth state
+.env
+.env.*
+!.env.example
+.playwright-squarespace-profile/
+.playwright-auth0-profile/
+
+# Local databases and secret material
+*.db
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
