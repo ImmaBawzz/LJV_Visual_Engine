@@ -74,14 +74,45 @@ Default max signature age is 1800 seconds and can be changed via `LJV_STOP_SIG_M
 ### Option 2: TOTP + Signed Stop File (Recommended)
 Enable a second factor so stop requests require both signature and authenticator code.
 
-1. Generate and store secrets once:
+1. Generate and store signing secret once:
 
 ```batch
 python 05_SCRIPTS\tools\stop_control.py gen-secret
-python 05_SCRIPTS\tools\stop_control.py gen-totp-secret
 ```
 
-2. Set environment variables for runner and control commands:
+2. One-command authenticator onboarding (prints `LJV_STOP_TOTP_SECRET` and `otpauth_uri`):
+
+```batch
+python 05_SCRIPTS\tools\stop_control.py provision-totp --issuer "LJV Visual Engine" --account "pipeline-stop" --show-current-code
+```
+
+Optional QR output:
+
+```batch
+python 05_SCRIPTS\tools\stop_control.py provision-totp --qr-ascii
+python 05_SCRIPTS\tools\stop_control.py provision-totp --qr-png 03_WORK\temp\totp_onboarding.png
+```
+
+Note: QR options require `qrcode[pil]` in your Python environment.
+
+Team onboarding shortcut (write full env file with both secrets):
+
+```batch
+python 05_SCRIPTS\tools\stop_control.py write-env --output 01_CONFIG\stop_control.env --require-totp
+```
+
+This writes:
+- `LJV_STOP_SECRET`
+- `LJV_STOP_TOTP_SECRET`
+- `LJV_STOP_REQUIRE_TOTP`
+
+Load into PowerShell session:
+
+```powershell
+Get-Content '01_CONFIG/stop_control.env' | ForEach-Object { if ($_ -match '^(?<k>[^=]+)=(?<v>.*)$') { Set-Item -Path Env:$($matches.k) -Value $matches.v } }
+```
+
+3. Set environment variables for runner and control commands:
 
 ```batch
 set LJV_STOP_SECRET=your_hmac_secret
@@ -89,13 +120,13 @@ set LJV_STOP_TOTP_SECRET=your_base32_totp_secret
 set LJV_STOP_REQUIRE_TOTP=true
 ```
 
-3. Create a stop request with current authenticator code:
+4. Create a stop request with current authenticator code:
 
 ```batch
 python 05_SCRIPTS\tools\stop_control.py create --mode graceful --totp-code 123456 --reason "Operator requested stop"
 ```
 
-4. Verify stop file (manual check):
+5. Verify stop file (manual check):
 
 ```batch
 python 05_SCRIPTS\tools\stop_control.py verify --json
