@@ -293,9 +293,7 @@ function Execute-Step {
 
     # Record result
     if ($exitCode -eq 0) {
-        $validationCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); " + `
-            "try: cp.validate_step_output(" + $stepId + ")" + `
-            "`nexcept Exception as ex: print('VALIDATION_ERROR: ' + str(ex)); raise SystemExit(2)"
+        $validationCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); cp.validate_step_output(" + $stepId + ")"
         $validationOutput = python -c $validationCmd 2>&1
         $validationExitCode = $LASTEXITCODE
 
