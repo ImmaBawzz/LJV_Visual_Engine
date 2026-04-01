@@ -1,43 +1,31 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r 05_SCRIPTS/dashboard/requirements.txt",
-  "env": {
-    "LJV_DEBUG": "@ljv_debug",
-    "LJV_SECRET_KEY": "@ljv_secret_key",
-    "LJV_SESSION_LIFETIME_MINUTES": "480",
-    "LJV_SESSION_COOKIE_SECURE": "true",
-    "LJV_DESTRUCTIVE_ACTION_REAUTH_WINDOW_SEC": "300",
-    "LJV_DEVELOPER_EMAIL": "@ljv_developer_email",
-    "LJV_ALLOWED_ORIGINS": "@ljv_allowed_origins",
-    "LJV_AUTH_DB_PATH": "/tmp/ljv_auth.db",
-    "LJV_GOOGLE_OAUTH_ENABLED": "false"
-  },
-  "functions": {
-    "05_SCRIPTS/dashboard/app.py": {
-      "memory": 3008,
-      "maxDuration": 60
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
     }
-  },
-  "routes": [
+  ],
+  "rewrites": [
     {
-      "src": "/login.html",
-      "dest": "/05_SCRIPTS/dashboard/static/login.html"
+      "source": "/login.html",
+      "destination": "/05_SCRIPTS/dashboard/static/login.html"
     },
     {
-      "src": "/static/(.*)",
-      "dest": "/05_SCRIPTS/dashboard/static/$1"
+      "source": "/static/(.*)",
+      "destination": "/05_SCRIPTS/dashboard/static/$1"
     },
     {
-      "src": "/auth/(.*)",
-      "dest": "/05_SCRIPTS/dashboard/app.py"
+      "source": "/auth/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/05_SCRIPTS/dashboard/app.py"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/(.*)",
-      "dest": "/05_SCRIPTS/dashboard/app.py"
+      "source": "/(.*)",
+      "destination": "/api/index.py"
     }
   ],
   "headers": [
