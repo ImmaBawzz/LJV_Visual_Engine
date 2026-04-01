@@ -14,6 +14,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $scriptsDir = Join-Path $root "05_SCRIPTS"
 $checkpointScript = Join-Path $scriptsDir "core\checkpoint_manager.py"
 $checkpointModuleDir = Join-Path $scriptsDir "core"
+$checkpointModuleDirPy = $checkpointModuleDir.Replace("\\", "/")
 $pipelineStart = Get-Date
 
 # Optional notification settings (environment variables)
@@ -231,7 +232,7 @@ function Invoke-CheckpointCommand {
         [string]$commandBody
     )
 
-    $pythonCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDir + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); " + $commandBody
+    $pythonCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); " + $commandBody
     python -c $pythonCmd 2>$null
 }
 
@@ -292,7 +293,7 @@ function Execute-Step {
 
     # Record result
     if ($exitCode -eq 0) {
-        $validationCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDir + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); " + `
+        $validationCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); " + `
             "try: cp.validate_step_output(" + $stepId + ")" + `
             "`nexcept Exception as ex: print('VALIDATION_ERROR: ' + str(ex)); raise SystemExit(2)"
         $validationOutput = python -c $validationCmd 2>&1
@@ -343,7 +344,7 @@ try {
     # Determine starting point
     $startStep = 1
     if ($Resume) {
-        $resumeCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDir + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); rp = cp.get_resume_point(); print(rp if rp else 1)"
+        $resumeCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); rp = cp.get_resume_point(); print(rp if rp else 1)"
         $resumePoint = python -c $resumeCmd 2>$null | Select-Object -Last 1
         if ($resumePoint -and $resumePoint -ne "None") {
             $startStep = [int]$resumePoint
