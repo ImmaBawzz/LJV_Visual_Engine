@@ -57,27 +57,27 @@ function Send-PipelineNotification {
 
     $elapsed = [math]::Round(((Get-Date) - $pipelineStart).TotalMinutes, 1)
     $statusLower = $Status.ToLowerInvariant()
-    $emoji = "ℹ"
+    $emoji = "[INFO]"
     $priority = "default"
     $tag = "information_source"
 
     if ($statusLower -eq "success") {
-        $emoji = "✅"
+        $emoji = "[SUCCESS]"
         $priority = "high"
         $tag = "white_check_mark"
     }
     elseif ($statusLower -eq "failed") {
-        $emoji = "❌"
+        $emoji = "[FAILED]"
         $priority = "urgent"
         $tag = "x"
     }
     elseif ($statusLower -eq "running") {
-        $emoji = "🚀"
+        $emoji = "[START]"
         $priority = "high"
         $tag = "rocket"
     }
     elseif ($statusLower -eq "progress") {
-        $emoji = "🔄"
+        $emoji = "[PROGRESS]"
         $priority = "default"
         $tag = "arrows_counterclockwise"
     }
