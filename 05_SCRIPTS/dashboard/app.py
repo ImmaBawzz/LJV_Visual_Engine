@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import tempfile
@@ -32,11 +33,13 @@ from auth.guards import require_auth, require_admin, require_destructive_action_
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[2]
-WORK_DIR = ROOT / "03_WORK"
+IS_VERCEL = bool(os.getenv("VERCEL"))
+RUNTIME_ROOT = Path("/tmp/ljv_runtime") if IS_VERCEL else ROOT
+WORK_DIR = RUNTIME_ROOT / "03_WORK"
 LOGS_DIR = WORK_DIR / "logs"
 REPORTS_DIR = WORK_DIR / "reports"
 ANALYSIS_DIR = WORK_DIR / "analysis"
-OUTPUT_DIR = ROOT / "04_OUTPUT"
+OUTPUT_DIR = RUNTIME_ROOT / "04_OUTPUT"
 CONFIG_DIR = ROOT / "01_CONFIG"
 
 CHECKPOINT_FILE = WORK_DIR / "pipeline_checkpoint.json"
