@@ -30,12 +30,22 @@ function Get-NotifierConfig {
         return $null
     }
 
+    $title = "LJV Release Pipeline"
+    if ($env:LJV_NOTIFY_TITLE) {
+        $title = $env:LJV_NOTIFY_TITLE
+    }
+
+    $ntfyServer = "https://ntfy.sh"
+    if ($env:LJV_NOTIFY_NTFY_SERVER) {
+        $ntfyServer = $env:LJV_NOTIFY_NTFY_SERVER.TrimEnd('/')
+    }
+
     $config = @{
         Channel = $channel.ToLowerInvariant()
-        Title = if ($env:LJV_NOTIFY_TITLE) { $env:LJV_NOTIFY_TITLE } else { "LJV Release Pipeline" }
+        Title = $title
         WebhookUrl = $env:LJV_NOTIFY_WEBHOOK_URL
         NtfyTopic = $env:LJV_NOTIFY_NTFY_TOPIC
-        NtfyServer = if ($env:LJV_NOTIFY_NTFY_SERVER) { $env:LJV_NOTIFY_NTFY_SERVER.TrimEnd('/') } else { "https://ntfy.sh" }
+        NtfyServer = $ntfyServer
     }
 
     return $config
@@ -202,7 +212,8 @@ function Initialize-Checkpoint {
         $mode = "normal"
         if ($Resume) { $mode = "resume" }
         elseif ($Force) { $mode = "force" }
-        Send-PipelineNotification -Config $notifierConfig -Status "running" -Message "Pipeline execution started ($mode mode)."
+        $startMessage = "Pipeline execution started ({0} mode)." -f $mode
+        Send-PipelineNotification -Config $notifierConfig -Status "running" -Message $startMessage
     }
 }
 
@@ -302,12 +313,12 @@ function Execute-Step {
             }
             $safeValidationError = $validationError.Replace("'", "\\'")
             Invoke-CheckpointCommand "cp.mark_step_failed($stepId, '$stepName', $validationExitCode, '$safeValidationError')"
-            Write-Host "✗ Step $stepId failed output validation" -ForegroundColor Red
+            Write-Host "[FAIL] Step $stepId failed output validation" -ForegroundColor Red
             return $validationExitCode
         }
 
         Invoke-CheckpointCommand "cp.mark_step_complete($stepId, '$stepName', 0)"
-        Write-Host "✓ Step $stepId complete" -ForegroundColor Green
+        Write-Host "[OK] Step $stepId complete" -ForegroundColor Green
         if ($notifierConfig) {
             Send-PipelineNotification -Config $notifierConfig -Status "progress" -StepId $stepId -StepName $stepName -StepTotal $totalSteps -Message "Step completed successfully."
         }
@@ -315,7 +326,7 @@ function Execute-Step {
     else {
         $errorMsg = "Exit code $exitCode"
         Invoke-CheckpointCommand "cp.mark_step_failed($stepId, '$stepName', $exitCode, '$errorMsg')"
-        Write-Host "✗ Step $stepId failed (exit code: $exitCode)" -ForegroundColor Red
+        Write-Host "[FAIL] Step $stepId failed (exit code: $exitCode)" -ForegroundColor Red
         if ($notifierConfig) {
             Send-PipelineNotification -Config $notifierConfig -Status "failed" -StepId $stepId -StepName $stepName -StepTotal $totalSteps -Message "Step failed with exit code $exitCode."
         }
