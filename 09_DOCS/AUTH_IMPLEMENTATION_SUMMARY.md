@@ -347,7 +347,7 @@ README.md                       # UPDATED: Auth feature summary
 | No 2FA | ⏳ Deferred | Phase C enhancement |
 | No audit log UI | ⏳ Deferred | Logs available in structured log files |
 | SQLite only | ✅ OK for MVP | Migrate to PostgreSQL for production scale-up |
-| No password reset email | ⏳ Deferred | Manual password reset via DB for now |
+| Password reset email delivery not integrated | ⏳ Deferred | Reset API is implemented; production email provider integration is still needed |
 
 ---
 

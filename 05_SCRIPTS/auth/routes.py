@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -11,8 +11,13 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session as DBSession
 
 from .config import config
-from .database import User, get_db
-from .security import hash_password, verify_password
+from .database import Session as SessionModel, User, get_db
+from .security import (
+    generate_password_reset_token,
+    hash_password,
+    hash_token,
+    verify_password,
+)
 from .session import (
     create_session,
     get_user_from_session,
@@ -39,6 +44,15 @@ class ReauthRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    token: str
+    new_password: str
 
 
 class SessionResponse(BaseModel):
@@ -343,6 +357,88 @@ async def status(request: Request, db: DBSession = Depends(get_db)):
             is_admin=bool(user.is_admin),
         ),
     )
+
+
+@router.post("/request-password-reset")
+async def request_password_reset(
+    req: PasswordResetRequest,
+    request: Request,
+    db: DBSession = Depends(get_db),
+):
+    """
+    Request a password reset token for local accounts.
+
+    Always returns a generic success response to avoid email enumeration.
+    """
+    email = req.email.strip().lower()
+    user = db.query(User).filter(User.email == email).first()
+
+    reset_token = None
+    if user and user.is_active and user.password_hash:
+        reset_token = generate_password_reset_token()
+        user.reset_token_hash = hash_token(reset_token)
+        user.reset_token_expires_at = datetime.now(timezone.utc) + timedelta(
+            minutes=config.PASSWORD_RESET_TOKEN_TTL_MINUTES
+        )
+        db.commit()
+
+        reset_url = (
+            f"{request.url.scheme}://{request.url.netloc}/login.html?reset_token={reset_token}"
+        )
+        logger.info(
+            "Password reset requested for %s; reset URL generated (debug only).",
+            user.email,
+        )
+
+        if config.DEBUG:
+            return {
+                "status": "ok",
+                "message": "Password reset token generated.",
+                "reset_token": reset_token,
+                "reset_url": reset_url,
+            }
+
+    return {
+        "status": "ok",
+        "message": "If this email exists, password reset instructions have been sent.",
+    }
+
+
+@router.post("/reset-password")
+async def reset_password(
+    req: PasswordResetConfirmRequest,
+    db: DBSession = Depends(get_db),
+):
+    """Reset a local account password using a valid reset token."""
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    token_hash = hash_token(req.token)
+    now_utc = datetime.now(timezone.utc)
+
+    user = (
+        db.query(User)
+        .filter(
+            User.reset_token_hash == token_hash,
+            User.reset_token_expires_at.isnot(None),
+            User.reset_token_expires_at > now_utc,
+        )
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired password reset token")
+
+    user.password_hash = hash_password(req.new_password)
+    user.reset_token_hash = None
+    user.reset_token_expires_at = None
+
+    # Invalidate active sessions after password change.
+    db.query(SessionModel).filter(SessionModel.user_id == user.id).delete()
+    db.commit()
+
+    logger.info("Password reset completed for %s", user.email)
+    return {"status": "ok", "message": "Password reset successful"}
 
 
 # === Helper Functions ===
