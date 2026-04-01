@@ -14,7 +14,7 @@ from typing import Any, Dict, List
 from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Query, Depends, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,7 +28,7 @@ from auth.config import config as auth_config
 from auth.database import init_db as auth_init_db, get_db
 from auth.middleware import setup_security_middleware
 from auth.routes import router as auth_router
-from auth.guards import require_auth, require_admin, require_destructive_action_stepup, log_control_action
+from auth.guards import require_auth, require_admin, require_destructive_action_stepup, log_control_action, optional_auth
 
 logger = logging.getLogger(__name__)
 
@@ -457,12 +457,19 @@ def _start_pipeline(mode: str) -> Dict[str, Any]:
 
 
 @app.get("/")
-def dashboard_root() -> FileResponse:
+async def dashboard_root(request: Request, auth=Depends(optional_auth)):
+    if not auth:
+        return RedirectResponse("/login", status_code=302)
     return FileResponse(STATIC_DIR / "index.html")
 
 
-@app.get("/login.html")
+@app.get("/login")
 def login_page() -> FileResponse:
+    return FileResponse(STATIC_DIR / "login.html")
+
+
+@app.get("/login.html")
+def login_page_legacy() -> FileResponse:
     return FileResponse(STATIC_DIR / "login.html")
 
 

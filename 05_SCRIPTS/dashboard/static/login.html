@@ -740,7 +740,19 @@
         });
 
         // Remember Me Functionality
-        window.addEventListener("load", () => {
+        window.addEventListener("load", async () => {
+            // Already logged in? Go straight to the dashboard.
+            try {
+                const statusRes = await fetch("/auth/status", { credentials: "include" });
+                if (statusRes.ok) {
+                    const statusData = await statusRes.json();
+                    if (statusData.authenticated) {
+                        window.location.href = "/";
+                        return;
+                    }
+                }
+            } catch (_) { /* silently ignore network errors */ }
+
             const remembered = localStorage.getItem("ljv_remember_email");
             if (remembered) {
                 document.getElementById("login-email").value = remembered;
