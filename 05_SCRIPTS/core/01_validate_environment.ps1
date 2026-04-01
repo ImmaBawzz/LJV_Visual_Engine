@@ -32,16 +32,20 @@ if(-not $project.artist -or -not $project.title){
   throw "Missing project metadata"
 }
 
-$ffmpegVersion = & $ffmpegPath -version 2>$null | Select-Object -First 1
-if($LASTEXITCODE -eq 0){
+$ffmpegVersionOutput = & $ffmpegPath -version 2>$null
+$ffmpegExitCode = $LASTEXITCODE
+$ffmpegVersion = $ffmpegVersionOutput | Select-Object -First 1
+if($ffmpegExitCode -eq 0){
   W "OK ffmpeg executable responds: $ffmpegVersion"
 } else {
   W "FAIL ffmpeg executable failed to run"
   throw "ffmpeg not executable"
 }
 
-$ffprobeVersion = & $ffprobePath -version 2>$null | Select-Object -First 1
-if($LASTEXITCODE -eq 0){
+$ffprobeVersionOutput = & $ffprobePath -version 2>$null
+$ffprobeExitCode = $LASTEXITCODE
+$ffprobeVersion = $ffprobeVersionOutput | Select-Object -First 1
+if($ffprobeExitCode -eq 0){
   W "OK ffprobe executable responds: $ffprobeVersion"
 } else {
   W "FAIL ffprobe executable failed to run"
