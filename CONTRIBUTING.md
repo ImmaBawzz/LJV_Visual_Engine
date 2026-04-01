@@ -69,6 +69,29 @@ Examples of welcome contributions:
 
 ## Code Contributions
 
+### Collaboration Model (Owner + Contributors)
+
+Use this operating model to keep work fast and safe:
+
+1. **Issue first** — Every non-trivial change starts with a GitHub issue
+2. **Branch per task** — Use `feature/...`, `fix/...`, or `docs/...` branch names
+3. **PR required** — Merge through pull requests only (no direct pushes to `main`)
+4. **Evidence required** — PRs must include test and report evidence
+5. **Owner review gate** — Owner approval is required before merge
+
+Recommended cadence:
+
+- Open issue with acceptance criteria
+- Push small commits daily
+- Open draft PR early for visibility
+- Finalize PR only after the validation checklist is complete
+
+Merge standards:
+
+- Prefer **Squash and merge** for a clean history
+- Delete merged branches
+- Link PRs to issues for traceability
+
 ### Code Style
 
 **Python:**
@@ -150,6 +173,7 @@ Get-ChildItem 04_OUTPUT -Recurse | Measure-Object -Sum -Property Length
 3. **Test end-to-end** — Include test results in PR description
 4. **Document changes** — Update relevant guides and READMEs
 5. **Submit PR** with:
+
    - Description of what changed and why
    - Test results (input type, output files verified)
    - Any breaking changes or migration steps required

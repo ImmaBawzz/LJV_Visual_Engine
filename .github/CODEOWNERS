@@ -1,0 +1,9 @@
+# Default repository owner reviews all changes
+* @ImmaBawzz
+
+# Critical pipeline and release paths require explicit owner review
+/05_SCRIPTS/core/ @ImmaBawzz
+/05_SCRIPTS/release/ @ImmaBawzz
+/01_CONFIG/ @ImmaBawzz
+/run_release_pipeline.bat @ImmaBawzz
+/05_SCRIPTS/run_release_pipeline_resumable.ps1 @ImmaBawzz

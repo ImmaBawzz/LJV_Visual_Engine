@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd 05_SCRIPTS/dashboard && pip install -r ../../REQUIREMENTS.md",
+  "buildCommand": "pip install -r 05_SCRIPTS/dashboard/requirements.txt",
   "env": {
     "LJV_DEBUG": "@ljv_debug",
     "LJV_SECRET_KEY": "@ljv_secret_key",
