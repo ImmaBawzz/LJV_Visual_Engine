@@ -75,6 +75,20 @@ class PipelineCheckpoint:
             "created_at": _utc_now_iso(),
             "last_updated": _utc_now_iso(),
             "overall_status": "in_progress",
+            "run_context": {
+                "active": False,
+                "pid": None,
+                "host": None,
+                "started_at": None,
+                "mode": None,
+            },
+            "halt_request": {
+                "requested": False,
+                "mode": None,
+                "reason": None,
+                "requested_at": None,
+                "source": None,
+            },
             "steps": {}
         }
 
@@ -124,6 +138,26 @@ class PipelineCheckpoint:
         self.save()
         self._structured_log("INFO", step_name, f"Step {step_id} completed ({duration:.2f}s)", exit_code)
 
+    def mark_step_interrupted(self, step_id: int, step_name: str, exit_code: int, reason: str) -> None:
+        """Record interrupted step state (operator halt or external stop)."""
+        if step_id not in self.state["steps"]:
+            self.state["steps"][step_id] = {"name": step_name}
+
+        step = self.state["steps"][step_id]
+        start = _parse_iso_or_now(step.get("start_time"))
+        end = datetime.now(timezone.utc)
+        duration = (end - start).total_seconds()
+
+        step["status"] = "interrupted"
+        step["end_time"] = end.isoformat()
+        step["duration_sec"] = round(duration, 2)
+        step["exit_code"] = exit_code
+        step["error"] = reason
+
+        self.state["overall_status"] = "halted"
+        self.save()
+        self._structured_log("WARNING", step_name, f"Step {step_id} interrupted: {reason}", exit_code)
+
     def mark_step_failed(self, step_id: int, step_name: str, exit_code: int, error: str) -> None:
         """Record step failure with error context."""
         if step_id not in self.state["steps"]:
@@ -165,6 +199,77 @@ class PipelineCheckpoint:
         self.save()
         self._structured_log("INFO", "CHECKPOINT", "Pipeline checkpoint reset", 0)
 
+    def set_run_context(self, pid: int, host: str, mode: str) -> None:
+        """Record active pipeline process context for external halt operations."""
+        self.state["run_context"] = {
+            "active": True,
+            "pid": pid,
+            "host": host,
+            "started_at": _utc_now_iso(),
+            "mode": mode,
+        }
+        self.save()
+        self._structured_log("INFO", "PIPELINE", f"Run context set (pid={pid}, mode={mode})", None)
+
+    def clear_run_context(self) -> None:
+        """Clear active pipeline process metadata."""
+        self.state["run_context"] = {
+            "active": False,
+            "pid": None,
+            "host": None,
+            "started_at": None,
+            "mode": None,
+        }
+        self.save()
+
+    def request_halt(self, mode: str, reason: str, source: str = "cli") -> None:
+        """Record a halt request for cooperative stop handling."""
+        normalized_mode = mode if mode in {"graceful", "immediate"} else "graceful"
+        self.state["halt_request"] = {
+            "requested": True,
+            "mode": normalized_mode,
+            "reason": reason,
+            "requested_at": _utc_now_iso(),
+            "source": source,
+        }
+        self.save()
+        self._structured_log(
+            "WARNING",
+            "PIPELINE",
+            f"Halt requested ({normalized_mode}) from {source}: {reason}",
+            None,
+        )
+
+    def clear_halt_request(self) -> None:
+        """Clear any existing halt request."""
+        self.state["halt_request"] = {
+            "requested": False,
+            "mode": None,
+            "reason": None,
+            "requested_at": None,
+            "source": None,
+        }
+        self.save()
+
+    def mark_running_steps_interrupted(self, reason: str, exit_code: int = 130) -> None:
+        """Mark any currently running steps as interrupted."""
+        for step_id, step in self.state["steps"].items():
+            if step.get("status") != "running":
+                continue
+            self.mark_step_interrupted(step_id, step.get("name", f"Step {step_id}"), exit_code, reason)
+
+    def mark_pipeline_halted(self, mode: str, reason: str, halted_step_id: Optional[int]) -> None:
+        """Record pipeline halt metadata for resumable stop behavior."""
+        self.state["overall_status"] = "halted"
+        self.state["halted"] = {
+            "mode": mode,
+            "reason": reason,
+            "halted_at": _utc_now_iso(),
+            "halted_step_id": halted_step_id,
+        }
+        self.save()
+        self._structured_log("WARNING", "PIPELINE", f"Pipeline halted ({mode}): {reason}", 130)
+
     def report(self) -> str:
         """Generate human-readable checkpoint report."""
         lines = [
@@ -177,6 +282,12 @@ class PipelineCheckpoint:
             "STEP STATUS:",
             "-" * 70,
         ]
+
+        halt_request = self.state.get("halt_request", {})
+        if halt_request.get("requested"):
+            lines.insert(6, f"Halt Requested: {halt_request.get('mode', 'unknown').upper()} ({halt_request.get('source', 'unknown')})")
+            lines.insert(7, f"Halt Reason: {halt_request.get('reason', '')}")
+            lines.insert(8, "")
 
         completed_count = 0
         failed_step = None
@@ -192,6 +303,7 @@ class PipelineCheckpoint:
                 "COMPLETED": "✓",
                 "RUNNING": "→",
                 "FAILED": "✗",
+                "INTERRUPTED": "!",
                 "PENDING": " "
             }.get(status, "?")
 
@@ -322,3 +434,36 @@ if __name__ == "__main__":
     elif sys.argv[1] == "--report":
         cp = get_checkpoint()
         print(cp.report())
+    elif sys.argv[1] == "--request-halt":
+        mode = "graceful"
+        reason = "Operator requested halt"
+        source = "cli"
+        if len(sys.argv) >= 3 and sys.argv[2]:
+            mode = sys.argv[2]
+        if len(sys.argv) >= 4 and sys.argv[3]:
+            reason = sys.argv[3]
+        if len(sys.argv) >= 5 and sys.argv[4]:
+            source = sys.argv[4]
+        cp = get_checkpoint()
+        cp.request_halt(mode, reason, source)
+        print(f"Halt requested ({mode}).")
+    elif sys.argv[1] == "--clear-halt":
+        cp = get_checkpoint()
+        cp.clear_halt_request()
+        print("Halt request cleared.")
+    elif sys.argv[1] == "--mark-halted":
+        mode = "graceful"
+        reason = "Pipeline halted"
+        halted_step_id: Optional[int] = None
+        if len(sys.argv) >= 3 and sys.argv[2]:
+            mode = sys.argv[2]
+        if len(sys.argv) >= 4 and sys.argv[3]:
+            reason = sys.argv[3]
+        if len(sys.argv) >= 5 and sys.argv[4]:
+            try:
+                halted_step_id = int(sys.argv[4])
+            except ValueError:
+                halted_step_id = None
+        cp = get_checkpoint()
+        cp.mark_pipeline_halted(mode, reason, halted_step_id)
+        print(f"Pipeline marked halted ({mode}).")

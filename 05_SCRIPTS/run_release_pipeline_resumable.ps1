@@ -6,16 +6,29 @@
 
 param(
     [switch]$Resume = $false,
-    [switch]$Force = $false
+    [switch]$Force = $false,
+    [switch]$RequestStop = $false,
+    [switch]$StopNow = $false
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $scriptsDir = Join-Path $root "05_SCRIPTS"
 $checkpointScript = Join-Path $scriptsDir "core\checkpoint_manager.py"
+$stopControlScript = Join-Path $scriptsDir "tools\stop_control.py"
 $checkpointModuleDir = Join-Path $scriptsDir "core"
-$checkpointModuleDirPy = $checkpointModuleDir.Replace("\\", "/")
+$checkpointModuleDirPy = ($checkpointModuleDir -replace "\\", "/")
+$stopFile = Join-Path $root "stop.now"
+$legacyStopFile = Join-Path $root "03_WORK\pipeline.stop"
+$stopSigMaxAgeSec = 1800
+if ($env:LJV_STOP_SIG_MAX_AGE_SEC) {
+    $parsedMaxAge = 0
+    if ([int]::TryParse($env:LJV_STOP_SIG_MAX_AGE_SEC, [ref]$parsedMaxAge) -and $parsedMaxAge -gt 0) {
+        $stopSigMaxAgeSec = $parsedMaxAge
+    }
+}
 $pipelineStart = Get-Date
+$haltExitCode = 130
 
 # Optional notification settings (environment variables)
 #   LJV_NOTIFY_CHANNEL=ntfy|discord|slack|webhook
@@ -226,6 +239,262 @@ function Show-Checkpoint-Status {
     Write-Host ""
 }
 
+function Get-HaltRequestFromCheckpoint {
+    $checkpointPath = Join-Path $root "03_WORK\pipeline_checkpoint.json"
+    if (-not (Test-Path $checkpointPath)) {
+        return $null
+    }
+
+    try {
+        $state = Get-Content $checkpointPath -Raw | ConvertFrom-Json
+        if ($state.halt_request -and $state.halt_request.requested -eq $true) {
+            return @{
+                mode = if ($state.halt_request.mode) { $state.halt_request.mode } else { "graceful" }
+                reason = if ($state.halt_request.reason) { $state.halt_request.reason } else { "Halt requested" }
+                source = if ($state.halt_request.source) { $state.halt_request.source } else { "checkpoint" }
+            }
+        }
+    }
+    catch {
+        Write-Host "Warning: unable to parse checkpoint halt state: $_" -ForegroundColor Yellow
+    }
+
+    return $null
+}
+
+function Get-HaltRequestFromSentinel {
+    if (-not (Test-Path $stopFile)) {
+        return $null
+    }
+
+    if (-not (Test-Path $stopControlScript)) {
+        Write-Host "Signed stop file ignored: verifier script missing at $stopControlScript" -ForegroundColor Yellow
+        return $null
+    }
+
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $verifyOutput = python $stopControlScript verify --input $stopFile --max-age-sec $stopSigMaxAgeSec --json 2>&1
+    $verifyExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+
+    if ($verifyExitCode -ne 0) {
+        $details = ($verifyOutput | Out-String).Trim()
+        if ($details) {
+            Write-Host "Signed stop file ignored: $details" -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "Signed stop file ignored: verification failed." -ForegroundColor Yellow
+        }
+        return $null
+    }
+
+    $raw = ($verifyOutput | Out-String).Trim()
+    if (-not $raw) {
+        Write-Host "Signed stop file ignored: empty verifier output." -ForegroundColor Yellow
+        return $null
+    }
+
+    try {
+        $verify = $raw | ConvertFrom-Json
+    }
+    catch {
+        Write-Host "Signed stop file ignored: invalid verifier JSON output." -ForegroundColor Yellow
+        return $null
+    }
+
+    if (-not $verify.valid) {
+        Write-Host "Signed stop file ignored: $($verify.message)" -ForegroundColor Yellow
+        return $null
+    }
+
+    $resolvedMode = if ($verify.mode) { $verify.mode } else { "graceful" }
+    $resolvedReason = if ($verify.reason) { $verify.reason } else { "Stop requested via signed stop.now" }
+
+    return @{
+        mode = $resolvedMode
+        reason = $resolvedReason
+        source = "signed_sentinel"
+    }
+}
+
+function Get-HaltRequestFromLegacySentinel {
+    if (-not (Test-Path $legacyStopFile)) {
+        return $null
+    }
+
+    $mode = "graceful"
+    try {
+        $raw = (Get-Content $legacyStopFile -Raw).Trim().ToLowerInvariant()
+        if ($raw -eq "immediate") {
+            $mode = "immediate"
+        }
+    }
+    catch {
+        $mode = "graceful"
+    }
+
+    return @{
+        mode = $mode
+        reason = "Stop requested via legacy sentinel file"
+        source = "legacy_sentinel"
+    }
+}
+
+function Get-EffectiveHaltRequest {
+    $checkpointRequest = Get-HaltRequestFromCheckpoint
+    $sentinelRequest = Get-HaltRequestFromSentinel
+    if (-not $sentinelRequest) {
+        $sentinelRequest = Get-HaltRequestFromLegacySentinel
+    }
+
+    if ($checkpointRequest -and $sentinelRequest) {
+        if ($checkpointRequest.mode -eq "immediate" -or $sentinelRequest.mode -eq "immediate") {
+            return @{
+                mode = "immediate"
+                reason = "$($checkpointRequest.reason); $($sentinelRequest.reason)"
+                source = "checkpoint+sentinel"
+            }
+        }
+
+        return @{
+            mode = "graceful"
+            reason = "$($checkpointRequest.reason); $($sentinelRequest.reason)"
+            source = "checkpoint+sentinel"
+        }
+    }
+
+    if ($checkpointRequest) {
+        return $checkpointRequest
+    }
+
+    return $sentinelRequest
+}
+
+function Set-HaltSentinel {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$mode
+    )
+
+    if (-not $env:LJV_STOP_SECRET) {
+        Write-Host "Warning: LJV_STOP_SECRET is not set, signed stop.now file was not written." -ForegroundColor Yellow
+        return $false
+    }
+
+    if (-not (Test-Path $stopControlScript)) {
+        Write-Host "Warning: stop control script missing at $stopControlScript" -ForegroundColor Yellow
+        return $false
+    }
+
+    $cmd = @($stopControlScript, "create", "--mode", $mode, "--reason", "Operator requested stop", "--output", $stopFile)
+
+    if ($env:LJV_STOP_TOTP_SECRET) {
+        $totpCode = $env:LJV_STOP_TOTP_CODE
+        if (-not $totpCode) {
+            $totpCode = Read-Host "Enter current 6-digit authenticator code for stop authorization"
+        }
+        if (-not $totpCode) {
+            Write-Host "Warning: TOTP code missing, signed stop.now was not written." -ForegroundColor Yellow
+            return $false
+        }
+        $cmd += @("--totp-code", $totpCode)
+    }
+
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $createOutput = python @cmd 2>&1
+    $createExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+
+    if ($createExitCode -ne 0) {
+        $details = ($createOutput | Out-String).Trim()
+        if ($details) {
+            Write-Host "Warning: could not write signed stop.now: $details" -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "Warning: could not write signed stop.now." -ForegroundColor Yellow
+        }
+        return $false
+    }
+
+    return $true
+}
+
+function Clear-HaltSentinel {
+    if (Test-Path $stopFile) {
+        Remove-Item -Path $stopFile -Force
+    }
+
+    if (Test-Path $legacyStopFile) {
+        Remove-Item -Path $legacyStopFile -Force
+    }
+}
+
+function Register-RunContext {
+    $runMode = "normal"
+    if ($Resume) {
+        $runMode = "resume"
+    }
+    elseif ($Force) {
+        $runMode = "force"
+    }
+
+    $hostName = [System.Environment]::MachineName.Replace("'", "")
+    Invoke-CheckpointCommand "cp.set_run_context($PID, '$hostName', '$runMode')"
+}
+
+function Handle-StopRequest {
+    $requestedMode = "graceful"
+    if ($StopNow) {
+        $requestedMode = "immediate"
+    }
+
+    Write-Host "Requesting pipeline halt ($requestedMode)..." -ForegroundColor Yellow
+    $wroteSignedSentinel = Set-HaltSentinel -mode $requestedMode
+
+    Invoke-CheckpointCommand "cp.request_halt('$requestedMode', 'Operator requested stop', 'cli')"
+    if ($requestedMode -eq "immediate") {
+        Invoke-CheckpointCommand "cp.mark_running_steps_interrupted('Emergency stop requested by operator', $haltExitCode)"
+        Invoke-CheckpointCommand "cp.mark_pipeline_halted('immediate', 'Emergency stop requested by operator', None)"
+
+        $checkpointPath = Join-Path $root "03_WORK\pipeline_checkpoint.json"
+        $runnerPid = $null
+        if (Test-Path $checkpointPath) {
+            try {
+                $state = Get-Content $checkpointPath -Raw | ConvertFrom-Json
+                if ($state.run_context -and $state.run_context.active -eq $true -and $state.run_context.pid) {
+                    $runnerPid = [int]$state.run_context.pid
+                }
+            }
+            catch {
+                Write-Host "Warning: could not read active runner PID from checkpoint." -ForegroundColor Yellow
+            }
+        }
+
+        if ($runnerPid -and $runnerPid -ne $PID) {
+            Write-Host "Terminating active pipeline process tree (PID $runnerPid)..." -ForegroundColor Yellow
+            & taskkill /PID $runnerPid /T /F | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "Emergency stop signal delivered." -ForegroundColor Green
+            }
+            else {
+                Write-Host "Warning: could not terminate PID $runnerPid (it may have already exited)." -ForegroundColor Yellow
+            }
+        }
+        else {
+            Write-Host "No active pipeline process detected. Halt request recorded." -ForegroundColor Yellow
+        }
+    }
+    else {
+        Write-Host "Graceful halt requested. Active step will finish before stopping." -ForegroundColor Green
+    }
+
+    if ($wroteSignedSentinel) {
+        Write-Host "Signed stop sentinel written to stop.now" -ForegroundColor Gray
+    }
+}
+
 function Invoke-CheckpointCommand {
     param(
         [Parameter(Mandatory=$true)]
@@ -233,7 +502,50 @@ function Invoke-CheckpointCommand {
     )
 
     $pythonCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); " + $commandBody
-    python -c $pythonCmd 2>$null
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $commandOutput = python -c $pythonCmd 2>&1
+    $pythonExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($pythonExitCode -ne 0) {
+        $details = ""
+        if ($commandOutput) {
+            $details = ($commandOutput | Out-String)
+        }
+        throw "Checkpoint command failed.`nBody: $commandBody`nPython: $pythonCmd`nOutput:`n$details"
+    }
+}
+
+function Get-ResumeStepFromCheckpoint {
+    $checkpointPath = Join-Path $root "03_WORK\pipeline_checkpoint.json"
+    if (-not (Test-Path $checkpointPath)) {
+        return 1
+    }
+
+    try {
+        $state = Get-Content $checkpointPath -Raw | ConvertFrom-Json
+        if (-not $state.steps) {
+            return 1
+        }
+
+        $pending = @()
+        foreach ($prop in $state.steps.PSObject.Properties) {
+            $id = [int]$prop.Name
+            $status = $prop.Value.status
+            if ($status -ne "completed") {
+                $pending += $id
+            }
+        }
+
+        if ($pending.Count -gt 0) {
+            return ($pending | Measure-Object -Minimum).Minimum
+        }
+
+        return 1
+    }
+    catch {
+        return 1
+    }
 }
 
 # Execute a single step
@@ -294,8 +606,11 @@ function Execute-Step {
     # Record result
     if ($exitCode -eq 0) {
         $validationCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); cp.validate_step_output(" + $stepId + ")"
+        $prevEap = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
         $validationOutput = python -c $validationCmd 2>&1
         $validationExitCode = $LASTEXITCODE
+        $ErrorActionPreference = $prevEap
 
         if ($validationExitCode -ne 0) {
             $validationError = "Output validation failed for step $stepId"
@@ -336,18 +651,31 @@ function Execute-Step {
 
 # Main execution
 try {
+    if ($RequestStop) {
+        Handle-StopRequest
+        exit 0
+    }
+
     Initialize-Checkpoint
+    Register-RunContext
+
+    $existingHalt = Get-EffectiveHaltRequest
+    if ($existingHalt) {
+        Write-Host "A halt request is currently active ($($existingHalt.mode))." -ForegroundColor Yellow
+        Write-Host "Clear the request before starting a new run with: python core\checkpoint_manager.py --clear-halt" -ForegroundColor Yellow
+        exit $haltExitCode
+    }
+
+    Clear-HaltSentinel
+    Invoke-CheckpointCommand "cp.clear_halt_request()"
+
     Show-Checkpoint-Status
 
     # Determine starting point
     $startStep = 1
     if ($Resume) {
-        $resumeCmd = "import sys; sys.path.insert(0, '" + $checkpointModuleDirPy + "'); from checkpoint_manager import get_checkpoint; cp = get_checkpoint(); rp = cp.get_resume_point(); print(rp if rp else 1)"
-        $resumePoint = python -c $resumeCmd 2>$null | Select-Object -Last 1
-        if ($resumePoint -and $resumePoint -ne "None") {
-            $startStep = [int]$resumePoint
-            Write-Host "Resuming from step $startStep" -ForegroundColor Yellow
-        }
+        $startStep = Get-ResumeStepFromCheckpoint
+        Write-Host "Resuming from step $startStep" -ForegroundColor Yellow
     }
 
     # Execute steps
@@ -356,6 +684,16 @@ try {
         if ($step.ID -lt $startStep) {
             Write-Host "[$($step.ID)/$totalSteps] SKIPPED: $($step.Name)" -ForegroundColor DarkGray
             continue
+        }
+
+        $haltRequest = Get-EffectiveHaltRequest
+        if ($haltRequest) {
+            $haltReason = "$($haltRequest.reason) (source: $($haltRequest.source))"
+            $haltAtStep = $step.ID
+            Invoke-CheckpointCommand "cp.mark_pipeline_halted('$($haltRequest.mode)', '$haltReason', $haltAtStep)"
+            Write-Host "Pipeline halted before step $haltAtStep due to $($haltRequest.mode) stop request." -ForegroundColor Yellow
+            $failedStep = $null
+            break
         }
 
         $exitCode = Execute-Step $step $checkpointScript
@@ -369,12 +707,22 @@ try {
     Write-Host ""
     Show-Checkpoint-Status
 
-    if ($failedStep) {
+    $finalHaltRequest = Get-HaltRequestFromCheckpoint
+    if ($finalHaltRequest -or (Test-Path $stopFile) -or (Test-Path $legacyStopFile)) {
+        Write-Host "Pipeline halted by operator request. Resume when ready using -Resume." -ForegroundColor Yellow
+        if ($notifierConfig) {
+            Send-PipelineNotification -Config $notifierConfig -Status "failed" -StepTotal $totalSteps -Message "Pipeline halted by operator request."
+        }
+        Invoke-CheckpointCommand "cp.clear_run_context()"
+        exit $haltExitCode
+    }
+    elseif ($failedStep) {
         Write-Host "Pipeline failed at step $failedStep. To resume, run:" -ForegroundColor Yellow
         Write-Host "  powershell -ExecutionPolicy Bypass -File run_release_pipeline_resumable.ps1 -Resume" -ForegroundColor Cyan
         if ($notifierConfig) {
             Send-PipelineNotification -Config $notifierConfig -Status "failed" -StepId $failedStep -StepTotal $totalSteps -Message "Pipeline failed. Run with -Resume after fixing the issue."
         }
+        Invoke-CheckpointCommand "cp.clear_run_context()"
         exit 1
     }
     else {
@@ -382,6 +730,7 @@ try {
         if ($notifierConfig) {
             Send-PipelineNotification -Config $notifierConfig -Status "success" -StepTotal $totalSteps -Message "Pipeline completed successfully. Outputs and reports are ready for review."
         }
+        Invoke-CheckpointCommand "cp.clear_run_context()"
         exit 0
     }
 }
@@ -389,6 +738,12 @@ catch {
     Write-Host "Fatal error: $_" -ForegroundColor Red
     if ($notifierConfig) {
         Send-PipelineNotification -Config $notifierConfig -Status "failed" -StepTotal $totalSteps -Message "Fatal pipeline error: $_"
+    }
+    try {
+        Invoke-CheckpointCommand "cp.clear_run_context()"
+    }
+    catch {
+        Write-Host "Warning: could not clear run context after fatal error." -ForegroundColor Yellow
     }
     exit 1
 }

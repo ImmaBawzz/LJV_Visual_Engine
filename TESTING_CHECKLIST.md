@@ -224,6 +224,20 @@
 
 ---
 
+## Fail-Safe Halt Tests (Pipeline)
+
+- [ ] Start pipeline and request graceful stop: `run_release_pipeline.bat stop`
+- [ ] Confirm active step completes and pipeline halts before next step
+- [ ] Status shows halted/stop-request metadata in checkpoint report
+- [ ] Start pipeline and request emergency stop: `run_release_pipeline.bat stop --now`
+- [ ] Confirm active pipeline process tree is terminated (or already exited)
+- [ ] Confirm running step is marked interrupted/halted state is recorded
+- [ ] Clear halt state via `python 05_SCRIPTS/core/checkpoint_cli.py clear-halt`
+- [ ] Remove `stop.now` and verify a new run can start
+- [ ] Resume after halt with `run_release_pipeline.bat resume` and verify correct restart step
+
+---
+
 ## Documentation & Code Quality
 
 - [ ] Code is readable and well-commented

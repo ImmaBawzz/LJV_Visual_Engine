@@ -41,6 +41,70 @@ run_release_pipeline.bat log
 ```
 Shows all pipeline events with timestamps.
 
+### Request Graceful Stop (Fail-Safe)
+```batch
+run_release_pipeline.bat stop
+```
+Requests a cooperative halt. The current step is allowed to finish, then the pipeline stops before the next step.
+
+### Request Immediate Emergency Stop (Fail-Safe)
+```batch
+run_release_pipeline.bat stop --now
+```
+Requests an emergency halt and attempts to terminate the active pipeline process tree immediately.
+
+### Signed Stop-File Trigger
+Create a signed `stop.now` at repository root:
+
+```batch
+set LJV_STOP_SECRET=your_shared_secret_here
+python 05_SCRIPTS\tools\stop_control.py create --mode graceful --reason "Operator requested stop"
+```
+
+For immediate halt:
+
+```batch
+set LJV_STOP_SECRET=your_shared_secret_here
+python 05_SCRIPTS\tools\stop_control.py create --mode immediate --reason "Emergency stop"
+```
+
+The runner validates the HMAC signature before halting. Invalid or expired signatures are ignored.
+Default max signature age is 1800 seconds and can be changed via `LJV_STOP_SIG_MAX_AGE_SEC`.
+
+### Option 2: TOTP + Signed Stop File (Recommended)
+Enable a second factor so stop requests require both signature and authenticator code.
+
+1. Generate and store secrets once:
+
+```batch
+python 05_SCRIPTS\tools\stop_control.py gen-secret
+python 05_SCRIPTS\tools\stop_control.py gen-totp-secret
+```
+
+2. Set environment variables for runner and control commands:
+
+```batch
+set LJV_STOP_SECRET=your_hmac_secret
+set LJV_STOP_TOTP_SECRET=your_base32_totp_secret
+set LJV_STOP_REQUIRE_TOTP=true
+```
+
+3. Create a stop request with current authenticator code:
+
+```batch
+python 05_SCRIPTS\tools\stop_control.py create --mode graceful --totp-code 123456 --reason "Operator requested stop"
+```
+
+4. Verify stop file (manual check):
+
+```batch
+python 05_SCRIPTS\tools\stop_control.py verify --json
+```
+
+Notes:
+- `run_release_pipeline.bat stop` will prompt for TOTP if `LJV_STOP_TOTP_SECRET` is set and `LJV_STOP_TOTP_CODE` is not provided.
+- The TOTP code is validated against the stop file timestamp (with small clock skew tolerance).
+
 ### Reset Checkpoint
 ```batch
 run_release_pipeline.bat reset
@@ -129,6 +193,43 @@ The pipeline has 16 main steps:
 | 17 | Write Delivery Manifest | Documentation | 1-2s | Step 15 |
 | 18 | Write Release Report | Documentation | 1-2s | All steps |
 | 19 | Build Release Bundle | Packaging | 2-5s | All steps |
+
+---
+
+## Error Recovery Workflow
+
+## Halt Recovery Workflow
+
+### Scenario: Operator-triggered stop
+
+1. Request stop:
+   ```batch
+   run_release_pipeline.bat stop
+   ```
+   Or emergency stop:
+   ```batch
+   run_release_pipeline.bat stop --now
+   ```
+
+2. Confirm halt state:
+   ```batch
+   run_release_pipeline.bat status
+   ```
+   Look for `Overall Status: HALTED` and halt details.
+
+3. Clear halt request before restart:
+   ```batch
+   python 05_SCRIPTS/core/checkpoint_cli.py clear-halt
+   ```
+   And remove sentinel file if present:
+   ```batch
+   del stop.now
+   ```
+
+4. Resume from checkpoint:
+   ```batch
+   run_release_pipeline.bat resume
+   ```
 
 ---
 

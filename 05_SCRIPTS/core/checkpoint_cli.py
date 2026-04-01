@@ -6,6 +6,8 @@ Usage:
   python checkpoint_cli.py reset            # Reset checkpoint (start fresh)
   python checkpoint_cli.py log              # Show structured execution log
   python checkpoint_cli.py summary          # Show brief summary
+    python checkpoint_cli.py stop [mode]      # Request halt (mode: graceful|immediate)
+    python checkpoint_cli.py clear-halt       # Clear halt request
 """
 
 import json
@@ -66,11 +68,35 @@ def cmd_summary():
 
     print(f"Status: {status}")
     print(f"Progress: {completed}/{total} steps completed")
+
+    halt = cp.state.get("halt_request", {})
+    if halt.get("requested"):
+        print(f"Halt requested: {halt.get('mode', 'graceful')} ({halt.get('source', 'unknown')})")
+        print(f"Halt reason: {halt.get('reason', '-')}")
     
     if cp.get_resume_point():
         print(f"Resume point: Step {cp.get_resume_point()}")
     else:
         print("All steps completed!")
+
+
+def cmd_stop(mode: str = "graceful"):
+    """Request graceful or immediate halt."""
+    normalized_mode = mode.lower().strip()
+    if normalized_mode not in {"graceful", "immediate"}:
+        print("Invalid halt mode. Use: graceful or immediate")
+        sys.exit(2)
+
+    cp = get_checkpoint()
+    cp.request_halt(normalized_mode, "Requested via checkpoint_cli", "checkpoint_cli")
+    print(f"Halt requested ({normalized_mode}).")
+
+
+def cmd_clear_halt():
+    """Clear halt request state."""
+    cp = get_checkpoint()
+    cp.clear_halt_request()
+    print("Halt request cleared.")
 
 
 def main():
@@ -89,6 +115,13 @@ def main():
         cmd_log()
     elif cmd == "summary":
         cmd_summary()
+    elif cmd == "stop":
+        mode = "graceful"
+        if len(sys.argv) >= 3:
+            mode = sys.argv[2]
+        cmd_stop(mode)
+    elif cmd == "clear-halt":
+        cmd_clear_halt()
     else:
         print(f"Unknown command: {cmd}")
         print(__doc__)

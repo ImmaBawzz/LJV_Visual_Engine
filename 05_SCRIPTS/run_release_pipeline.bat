@@ -6,6 +6,8 @@ REM   run_release_pipeline.bat resume       - Resume from last failure
 REM   run_release_pipeline.bat force        - Force restart (clear checkpoint)
 REM   run_release_pipeline.bat status       - Check pipeline status
 REM   run_release_pipeline.bat log          - View execution log
+REM   run_release_pipeline.bat stop         - Request graceful stop
+REM   run_release_pipeline.bat stop --now   - Request immediate emergency stop
 
 setlocal enabledelayedexpansion
 
@@ -36,6 +38,17 @@ if /i "%CMD%"=="status" (
     exit /b 0
 )
 
+if /i "%CMD%"=="stop" (
+    if /i "%2"=="--now" (
+        echo Requesting immediate emergency stop...
+        powershell -ExecutionPolicy Bypass -File "run_release_pipeline_resumable.ps1" -RequestStop -StopNow
+    ) else (
+        echo Requesting graceful stop...
+        powershell -ExecutionPolicy Bypass -File "run_release_pipeline_resumable.ps1" -RequestStop
+    )
+    exit /b !errorlevel!
+)
+
 if /i "%CMD%"=="log" (
     python "core\checkpoint_cli.py" log
     exit /b 0
@@ -53,4 +66,6 @@ echo   run_release_pipeline.bat force        - Force restart
 echo   run_release_pipeline.bat status       - Show status
 echo   run_release_pipeline.bat log          - Show execution log
 echo   run_release_pipeline.bat reset        - Reset checkpoint
+echo   run_release_pipeline.bat stop         - Request graceful stop
+echo   run_release_pipeline.bat stop --now   - Request immediate emergency stop
 
