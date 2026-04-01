@@ -12,6 +12,22 @@ fastapi>=0.115.0
 uvicorn>=0.30.0
 ```
 
+### Authentication & Database (Added for auth dashboard)
+
+```
+sqlalchemy>=2.0.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6
+email-validator>=2.0.0
+```
+
+**Optional (for Google OAuth):**
+```
+authlib>=1.3.0
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+```
+
 ## Audio Alignment Environment (Python 3.10, auto-provisioned)
 
 These are for Whisper-based lyric transcription and alignment:

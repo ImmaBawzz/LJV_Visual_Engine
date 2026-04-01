@@ -89,13 +89,24 @@ The repository now includes a local live dashboard prototype for run monitoring 
 
 ```powershell
 cd .\05_SCRIPTS\dashboard
-powershell -ExecutionPolicy Bypass -File .\run_dashboard.ps1 -Port 8787
+python app.py
 ```
 
-Then open: `http://127.0.0.1:8787`
+Then open your browser:
+- **Local dev:** `http://127.0.0.1:8787/login.html`
+- **Production:** `https://your-domain.com/login.html`
 
-### What it supports now
+First time: create an admin account with your email and password.
 
+### What it supports
+
+- **User authentication** via email/password with secure bcrypt hashing
+- **Session management** with secure httpOnly cookies and configurable expiry
+- **Role-based control** (admin-only access to pipeline controls)
+- **Step-up verification** for destructive actions (force restart, stop)
+- **Audit logging** of all control actions with user identity and IP
+- **Production-ready CORS and security headers**
+- **Google OAuth support** (optional, deferred for MVP; see AUTH_DEPLOYMENT.md)
 - Live checkpoint progress and active step visibility
 - Incremental structured log tailing
 - QA/report summary cards (preflight, quality gate, readiness)
@@ -127,6 +138,18 @@ Video rendering and encoding:
 - **10_render_master_video.ps1** — Primary video composite
 - **11_burn_lyrics.ps1** — Render with burned-in lyrics overlay
 - **12_mux_softsubs.ps1** — Embed soft subtitles
+
+### `05_SCRIPTS/auth/`
+
+Authentication and authorization:
+- **config.py** — Centralized auth configuration from environment
+- **database.py** — SQLAlchemy user and session models
+- **session.py** — Session lifecycle management
+- **security.py** — Password hashing and token generation
+- **oauth.py** — Google OAuth flow (Authlib)
+- **routes.py** — Auth endpoints (login, signup, logout, status)
+- **guards.py** — Authorization decorators for control endpoints
+- **middleware.py** — Security headers and rate limiting
 
 ### `05_SCRIPTS/release/`
 
@@ -182,6 +205,15 @@ Running the pipeline produces:
 ├── quality_gate_report.json
 └── release_readiness_report.json
 ```
+
+## Authentication & Deployment
+
+The dashboard requires authentication for all control operations. See [AUTH_DEPLOYMENT.md](./09_DOCS/AUTH_DEPLOYMENT.md) for:
+
+- Local development setup (email/password only)
+- Google OAuth integration
+- Production deployment (TLS, reverse proxy, environment config)
+- Security checklist
 
 ## Lyrics & Timing
 

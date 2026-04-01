@@ -17,10 +17,15 @@ const stateEls = {
   previewMeta: document.getElementById("previewMeta"),
   layoutCards: document.getElementById("layoutCards"),
   assetBrowser: document.getElementById("assetBrowser"),
+  userWidget: document.getElementById("userWidget"),
+  userEmail: document.getElementById("userEmail"),
+  logoutBtn: document.getElementById("logoutBtn"),
 };
 
 let logCursor = 0;
 const maxLogs = 300;
+let currentUser = null;
+let lastReauthTime = null;
 
 function badgeClassForStatus(status) {
   const value = String(status || "unknown").toLowerCase();
@@ -42,16 +47,39 @@ function bytesToMb(sizeBytes) {
 }
 
 async function getJson(path) {
-  const response = await fetch(path);
+  const response = await fetch(path, {
+    headers: _getAuthHeaders(),
+  });
   if (!response.ok) {
+    if (response.status === 401) {
+      _redirectToLogin();
+      throw new Error("Session expired");
+    }
     throw new Error(`Request failed: ${path}`);
   }
   return response.json();
 }
 
+function _getAuthHeaders() {
+  const sessionId = localStorage.getItem("ljv_session");
+  if (!sessionId) {
+    return {};
+  }
+  return {
+    "Authorization": `Bearer ${sessionId}`,
+  };
+}
+
 async function postAction(path) {
-  const response = await fetch(path, { method: "POST" });
+  const response = await fetch(path, { 
+    method: "POST",
+    headers: _getAuthHeaders(),
+  });
   if (!response.ok) {
+    if (response.status === 401) {
+      _redirectToLogin();
+      throw new Error("Session expired");
+    }
     const payload = await response.json().catch(() => ({}));
     throw new Error(payload.detail || "Action failed");
   }
@@ -297,16 +325,61 @@ async function refreshDashboardData() {
   renderAssetBrowser(assetBrowserPayload);
 }
 
-async function handleAction(path, confirmText) {
+async function handleAction(path, confirmText, isDestructive = false) {
   if (confirmText && !window.confirm(confirmText)) {
     return;
   }
+  
+  // For destructive actions, check if re-auth is needed
+  if (isDestructive && !_isWithinReauthWindow()) {
+    const password = window.prompt("This action requires re-authentication. Enter your password:");
+    if (!password) return;
+    
+    try {
+      const reauthResponse = await fetch("/auth/reauth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(_getAuthHeaders()),
+        },
+        body: JSON.stringify({ password }),
+      });
+      
+      if (!reauthResponse.ok) {
+        const err = await reauthResponse.json().catch(() => ({}));
+        throw new Error(err.detail || "Re-authentication failed");
+      }
+      
+      lastReauthTime = Date.now();
+    } catch (error) {
+      window.alert("Re-authentication failed: " + error.message);
+      return;
+    }
+  }
+  
   try {
     await postAction(path);
     await refreshState();
     stateEls.connectionStatus.textContent = "Action sent";
   } catch (error) {
-    window.alert(error.message);
+    if (error.message.includes("428")) {
+      window.alert("Re-authentication required. Please try again.");
+    } else {
+      window.alert(error.message);
+    }
+  }
+}
+
+function _isWithinReauthWindow() {
+  if (!lastReauthTime) return false;
+  const reauthWindowMs = 5 * 60 * 1000; // 5 minutes
+  return Date.now() - lastReauthTime < reauthWindowMs;
+}
+
+function _redirectToLogin() {
+  localStorage.removeItem("ljv_session");
+  window.location.href = "/login.html";
+}
   }
 }
 
@@ -321,13 +394,65 @@ async function tick() {
 }
 
 function bindActions() {
-  stateEls.startBtn.addEventListener("click", () => handleAction("/api/control/start", "Start a new pipeline run?"));
-  stateEls.resumeBtn.addEventListener("click", () => handleAction("/api/control/resume", "Resume from last non-completed step?"));
-  stateEls.retryBtn.addEventListener("click", () => handleAction("/api/control/retry", "Retry the failed step using resume mode?"));
-  stateEls.forceBtn.addEventListener("click", () => handleAction("/api/control/force", "Force reset checkpoint and restart from step 1?"));
+  stateEls.startBtn.addEventListener("click", () => handleAction("/api/control/start", "Start a new pipeline run?", false));
+  stateEls.resumeBtn.addEventListener("click", () => handleAction("/api/control/resume", "Resume from last non-completed step?", false));
+  stateEls.retryBtn.addEventListener("click", () => handleAction("/api/control/retry", "Retry the failed step using resume mode?", false));
+  stateEls.forceBtn.addEventListener("click", () => handleAction("/api/control/force", "Force reset checkpoint and restart from step 1?", true));
+  stateEls.logoutBtn.addEventListener("click", () => logout());
+}
+
+async function logout() {
+  try {
+    await fetch("/auth/logout", {
+      method: "POST",
+      headers: _getAuthHeaders(),
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+  } finally {
+    localStorage.removeItem("ljv_session");
+    window.location.href = "/login.html";
+  }
+}
+
+async function checkAuth() {
+  try {
+    const response = await fetch("/auth/status", {
+      headers: _getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      _redirectToLogin();
+      return false;
+    }
+    
+    const data = await response.json();
+    if (!data.authenticated) {
+      _redirectToLogin();
+      return false;
+    }
+    
+    currentUser = data.user;
+    if (stateEls.userWidget && currentUser) {
+      stateEls.userWidget.style.display = "flex";
+      stateEls.userEmail.textContent = currentUser.email;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Auth check failed:", error);
+    _redirectToLogin();
+    return false;
+  }
 }
 
 async function bootstrap() {
+  // Check authentication first
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    return; // Redirect already handled
+  }
+  
   bindActions();
   await tick();
   await refreshDashboardData();

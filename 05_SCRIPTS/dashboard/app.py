@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import subprocess
 import sys
 import tempfile
@@ -11,13 +12,24 @@ from pathlib import Path
 from typing import Any, Dict, List
 from urllib.parse import quote
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Query, Depends, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 # Add core scripts to path for timeline manager import
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from timeline_manager import TimelineManager, TimelineConfig, TimelineTrack, TimelineClip
+
+# Add auth module to path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "auth"))
+from auth.config import config as auth_config
+from auth.database import init_db as auth_init_db, get_db
+from auth.middleware import setup_security_middleware
+from auth.routes import router as auth_router
+from auth.guards import require_auth, require_admin, require_destructive_action_stepup, log_control_action
+
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[2]
 WORK_DIR = ROOT / "03_WORK"
@@ -40,13 +52,45 @@ CONTROL_COOLDOWN_SEC = 2
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI):
+    # Initialize directories
     _ensure_dirs()
+    
+    # Initialize authentication database
+    try:
+        auth_init_db()
+        logger.info("Auth database initialized")
+    except Exception as exc:
+        logger.error(f"Failed to initialize auth database: {exc}")
+        raise
+    
+    # Validate auth config
+    config_errors = auth_config.validate()
+    if config_errors:
+        logger.warning(f"Auth config warnings: {config_errors}")
+    
     _refresh_runtime_state()
     yield
 
 
 app = FastAPI(title="LJV Visual Engine Dashboard API", version="0.1.0", lifespan=_lifespan)
+
+# Configure CORS with auth-aware origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=auth_config.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add security middleware (headers, logging, rate limiting)
+setup_security_middleware(app)
+
+# Mount static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Register auth routes
+app.include_router(auth_router)
 
 
 def _utc_now() -> str:
@@ -520,23 +564,122 @@ def file_download(path: str = Query(..., min_length=1)) -> FileResponse:
 
 
 @app.post("/api/control/start")
-def control_start() -> Dict[str, Any]:
-    return {"runtime": _start_pipeline("start")}
+async def control_start(
+    request: Request,
+    auth: tuple = Depends(require_admin),
+) -> Dict[str, Any]:
+    """Start a new pipeline run (requires authentication)."""
+    user, session_id = auth
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        result = _start_pipeline("start")
+        log_control_action("start", user.email, user.id, client_ip, success=True)
+        return {"runtime": result}
+    except HTTPException as exc:
+        log_control_action("start", user.email, user.id, client_ip, success=False)
+        raise
 
 
 @app.post("/api/control/resume")
-def control_resume() -> Dict[str, Any]:
-    return {"runtime": _start_pipeline("resume")}
+async def control_resume(
+    request: Request,
+    auth: tuple = Depends(require_admin),
+) -> Dict[str, Any]:
+    """Resume from last non-completed step (requires authentication)."""
+    user, session_id = auth
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        result = _start_pipeline("resume")
+        log_control_action("resume", user.email, user.id, client_ip, success=True)
+        return {"runtime": result}
+    except HTTPException as exc:
+        log_control_action("resume", user.email, user.id, client_ip, success=False)
+        raise
 
 
 @app.post("/api/control/retry")
-def control_retry() -> Dict[str, Any]:
-    return {"runtime": _start_pipeline("retry")}
+async def control_retry(
+    request: Request,
+    auth: tuple = Depends(require_admin),
+) -> Dict[str, Any]:
+    """Retry the failed step (requires authentication)."""
+    user, session_id = auth
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        result = _start_pipeline("retry")
+        log_control_action("retry", user.email, user.id, client_ip, success=True)
+        return {"runtime": result}
+    except HTTPException as exc:
+        log_control_action("retry", user.email, user.id, client_ip, success=False)
+        raise
 
 
 @app.post("/api/control/force")
-def control_force() -> Dict[str, Any]:
-    return {"runtime": _start_pipeline("force")}
+async def control_force(
+    request: Request,
+    auth: tuple = Depends(require_destructive_action_stepup),
+) -> Dict[str, Any]:
+    """Force reset checkpoint and restart (destructive, requires step-up)."""
+    user, session_id = auth
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        result = _start_pipeline("force")
+        log_control_action("force", user.email, user.id, client_ip, success=True)
+        return {"runtime": result}
+    except HTTPException as exc:
+        log_control_action("force", user.email, user.id, client_ip, success=False)
+        raise
+
+
+@app.post("/api/control/stop")
+async def control_stop(
+    mode: str = "graceful",
+    request: Request = None,
+    auth: tuple = Depends(require_destructive_action_stepup),
+) -> Dict[str, Any]:
+    """
+    Request a graceful or immediate stop of the running pipeline.
+    
+    Destructive action requiring step-up confirmation.
+    """
+    user, session_id = auth
+    client_ip = request.client.host if request.client else "unknown"
+    
+    if mode not in {"graceful", "immediate"}:
+        raise HTTPException(status_code=400, detail=f"Invalid stop mode: {mode}")
+    
+    try:
+        # Create a stop sentinel or update checkpoint halt_request
+        state = _refresh_runtime_state()
+        if not state.get("active"):
+            log_control_action(f"stop:{mode}", user.email, user.id, client_ip, success=False)
+            raise HTTPException(status_code=409, detail="No pipeline is currently running")
+        
+        # Write halt request to checkpoint
+        checkpoint = _checkpoint_payload()
+        checkpoint["halt_request"] = {
+            "requested": True,
+            "mode": mode,
+            "reason": f"Requested by {user.email}",
+            "requested_at": _utc_now(),
+            "source": "api",
+        }
+        _safe_write_json(CHECKPOINT_FILE, checkpoint)
+        
+        log_control_action(f"stop:{mode}", user.email, user.id, client_ip, success=True)
+        
+        return {
+            "status": "stop_requested",
+            "mode": mode,
+            "requested_by": user.email,
+            "requested_at": _utc_now(),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        log_control_action(f"stop:{mode}", user.email, user.id, client_ip, success=False)
+        logger.error(f"Stop request failed: {exc}")
+        raise HTTPException(status_code=500, detail="Stop request failed")
 
 
 # ============================================================================

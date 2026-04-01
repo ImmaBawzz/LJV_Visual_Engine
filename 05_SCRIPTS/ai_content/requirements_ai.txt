@@ -1,0 +1,31 @@
+# LJV Visual Engine — AI Content Generation Dependencies
+#
+# Install with:
+#   pip install -r 05_SCRIPTS/ai_content/requirements_ai.txt
+#
+# GPU acceleration (optional but recommended for inference speed):
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# CPU-only install:
+#   pip install torch torchvision torchaudio
+
+# ── Core ML / NLP ──────────────────────────────────────────────────────────
+transformers>=4.40.0            # BART, T5, GPT-2, BERT pipeline + tokenizers
+torch>=2.2.0                    # PyTorch (CPU build; swap for GPU wheel above)
+sentencepiece>=0.1.99           # Required by T5Tokenizer
+
+# ── Music generation ──────────────────────────────────────────────────────
+music21>=9.1.0                  # MIDI composition / music notation
+numpy>=1.26.0                   # Random note/duration generation
+
+# ── YouTube publishing ────────────────────────────────────────────────────
+google-api-python-client>=2.130.0   # YouTube Data API v3
+google-auth-oauthlib>=1.2.0         # OAuth 2.0 browser flow
+google-auth-httplib2>=0.2.0         # HTTP transport for google-auth
+
+# ── Spotify publishing ────────────────────────────────────────────────────
+spotipy>=2.23.0                 # Spotify Web API wrapper
+
+# ── Utilities (already present in main env but listed for completeness) ──
+pathlib2>=2.3.7; python_version<"3.4"   # Backport; no-op on Python 3.4+
+cryptography>=42.0.0            # Used by autonomous_agent.py (existing)

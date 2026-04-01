@@ -580,27 +580,45 @@ function Execute-Step {
 
     # Execute script
     $exitCode = 0
+    $stepOutput = @()
     try {
         if ($scriptType -eq "ps1") {
-            & powershell -ExecutionPolicy Bypass -File $scriptPath
+            $stepOutput = @( & powershell -ExecutionPolicy Bypass -File $scriptPath 2>&1 )
             $exitCode = $LASTEXITCODE
         }
         elseif ($scriptType -eq "py") {
             if ($scriptArgs -and $scriptArgs.Count -gt 0) {
-                python $scriptPath @scriptArgs
+                $stepOutput = @( python $scriptPath @scriptArgs 2>&1 )
             } else {
-                python $scriptPath
+                $stepOutput = @( python $scriptPath 2>&1 )
             }
             $exitCode = $LASTEXITCODE
         }
         elseif ($scriptType -eq "bat") {
-            & cmd /c "$scriptPath"
-            $exitCode = $LASTEXITCODE
+            $stdoutPath = [System.IO.Path]::GetTempFileName()
+            $stderrPath = [System.IO.Path]::GetTempFileName()
+            try {
+                $process = Start-Process -FilePath "cmd.exe" -ArgumentList @("/c", "`"$scriptPath`"") -WorkingDirectory (Split-Path $scriptPath -Parent) -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+                $exitCode = $process.ExitCode
+                if (Test-Path $stdoutPath) {
+                    $stepOutput += Get-Content -Path $stdoutPath
+                }
+                if (Test-Path $stderrPath) {
+                    $stepOutput += Get-Content -Path $stderrPath
+                }
+            }
+            finally {
+                Remove-Item -Path $stdoutPath, $stderrPath -ErrorAction SilentlyContinue
+            }
         }
     }
     catch {
         Write-Host "Exception during execution: $_" -ForegroundColor Red
         $exitCode = 1
+    }
+
+    foreach ($line in $stepOutput) {
+        Write-Host ($line.ToString())
     }
 
     # Record result
